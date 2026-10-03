@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Boton, Campo, Fila, IrA, Pantalla, Seccion, Segmentado, T, Vacio } from '@/components/ui';
@@ -11,6 +11,8 @@ import { bs, useDatos } from '@/lib/datos';
 /** HU-Y01 (categorías), HU-Y02 (buscador global), destacados, carrito y pedidos. */
 export default function PaseoYa() {
   const router = useRouter();
+  const { local } = useLocalSearchParams<{ local?: string }>();
+  const { datos: productosLocal } = useDatos<any[]>(local ? `/paseoya/productos?local=${local}` : null);
   const { items, total } = useCarrito();
   const [ambito, setAmbito] = useState<'' | 'comida' | 'tiendas'>('');
   const [categoria, setCategoria] = useState<any | null>(null);
@@ -27,7 +29,7 @@ export default function PaseoYa() {
     setResultados(await api(`/paseoya/buscar?q=${encodeURIComponent(q)}&orden=${o}`).catch(() => []));
   }
 
-  const lista = resultados ?? (categoria ? productos : null);
+  const lista = resultados ?? (categoria ? productos : local ? productosLocal : null);
 
   return (
     <Pantalla>
@@ -69,6 +71,12 @@ export default function PaseoYa() {
         </>
       )}
 
+      {local && !resultados && !categoria && (
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <T v="senal" oro>{productosLocal?.[0]?.local ?? 'Productos del local'}</T>
+          <Pressable onPress={() => router.setParams({ local: undefined })} hitSlop={8}><T v="senal" tenue>Ver todo</T></Pressable>
+        </View>
+      )}
       {lista ? (
         lista.length ? lista.map((p) => <ProductoFila key={p.id} p={p} />) : <Vacio texto={resultados ? `No encontramos «${q}». Registramos tu búsqueda para que el Paseo sepa que hace falta.` : 'Sin productos en esta categoría.'} />
       ) : (

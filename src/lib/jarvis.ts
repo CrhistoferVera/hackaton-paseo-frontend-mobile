@@ -4,6 +4,8 @@ export interface RutaJarvis {
   metros: number;
   minutos?: number;
   pasos: string[];
+  /** Cada paso con el tramo de nodos que cubre (índices en `nodos`), para resaltarlo en el mapa. */
+  tramos?: { texto: string; piso: string; desde: number; hasta: number }[];
   nodos: { id: string; piso: string; x: number; y: number; tipo: string; nombre: string }[];
   destino?: string;
 }

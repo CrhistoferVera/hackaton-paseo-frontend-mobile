@@ -6,7 +6,7 @@ import { Animated, Platform, Pressable, View } from 'react-native';
 import { Aviso, Barra, Boton, ChipNivel, Etiqueta, Fila, IrA, Pantalla, Seccion, T } from '@/components/ui';
 import { C } from '@/constants/theme';
 import { api } from '@/lib/api';
-import { bs, entero, fecha, useDatos } from '@/lib/datos';
+import { bs, entero, fecha, hora, useDatos } from '@/lib/datos';
 import { useSesion } from '@/lib/sesion';
 import { useTiempoReal } from '@/lib/tiempo-real';
 
@@ -17,6 +17,9 @@ export default function Inicio() {
   const { datos: r, recargar } = useDatos<any>('/cliente/resumen');
   const { datos: misiones, recargar: recargarMisiones } = useDatos<any[]>('/cliente/misiones');
   const { datos: promos } = useDatos<any[]>('/cliente/promociones');
+  const { datos: eventos } = useDatos<any[]>('/cliente/eventos');
+  const hoyBo = new Date(Date.now() - 4 * 3600_000).toISOString().slice(0, 10);
+  const deHoy = (eventos ?? []).filter((e) => e.en_curso || new Date(new Date(e.inicio).getTime() - 4 * 3600_000).toISOString().slice(0, 10) === hoyBo);
   const { datos: notifs, recargar: recargarNotifs } = useDatos<any[]>('/cliente/notificaciones');
   const [ultimo, setUltimo] = useState<{ puntos: number; descripcion: string } | null>(null);
   const [aviso, setAviso] = useState<any | null>(null);
@@ -126,6 +129,13 @@ export default function Inicio() {
           <Fila key={m.id} titulo={m.nombre} detalle={`${m.local ? `${m.local.piso} · Local ${m.local.numero_local} · ` : ''}${m.avance}/${m.meta} · vence ${fecha(m.vigenteHasta)}`} valor={`+${m.recompensa}`} valorOro href="/misiones" />
         ))}
         {!activas.length && <T tenue v="chico">Completaste tus misiones. Pronto llegan nuevas.</T>}
+      </Seccion>
+
+      <Seccion titulo="Hoy en el Paseo" accion={<IrA href="/eventos"><T v="senal" tenue>Agenda</T></IrA>}>
+        {deHoy.slice(0, 3).map((e) => (
+          <Fila key={e.id} titulo={e.titulo} detalle={`${e.en_curso ? 'Ahora' : hora(e.inicio)} · ${e.lugar}`} izquierda={e.en_curso ? <Etiqueta texto="En vivo" tono="oro" /> : undefined} valor={e.puntos ? `+${e.puntos}` : undefined} valorOro href="/eventos" />
+        ))}
+        {!deHoy.length && <T tenue v="chico">Hoy no hay eventos. Mira la agenda de la semana.</T>}
       </Seccion>
 
       {!!promos?.length && (

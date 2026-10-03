@@ -1,83 +1,90 @@
+import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
+import { api } from './api';
+import { callar } from './voz';
 
-/**
- * Jarvis escucha con el reconocedor de voz del propio teléfono (expo-speech-recognition):
- * el audio se convierte a texto en el dispositivo y solo el texto viaja al backend.
- * El módulo nativo no existe en Expo Go; ahí el micrófono se oculta y se escribe la pregunta.
- */
-type Modulo = typeof import('expo-speech-recognition');
-let modulo: Modulo | null | undefined;
+export type EstadoEscucha = 'inactivo' | 'grabando' | 'procesando';
 
-function cargar(): Modulo | null {
-  if (modulo !== undefined) return modulo;
-  try {
-    // require diferido: en Expo Go el módulo nativo no está y la importación lanzaría un error
-    modulo = require('expo-speech-recognition') as Modulo;
-    if (!modulo.ExpoSpeechRecognitionModule?.isRecognitionAvailable?.()) modulo = null;
-  } catch {
-    modulo = null;
-  }
-  return modulo;
+/** Lo que devuelve el backend: el texto transcrito y, si se pidió, la respuesta de Jarvis. */
+export interface ResultadoVoz {
+  texto: string;
+  segundos: number;
+  latenciaMs: number;
+  respuesta: any | null;
 }
 
-export function useEscucha(alTerminar: (texto: string) => void) {
-  const [disponible] = useState(() => !!cargar());
-  const [escuchando, setEscuchando] = useState(false);
-  const [parcial, setParcial] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const final = useRef('');
-  const callback = useRef(alTerminar);
-  useEffect(() => {
-    callback.current = alTerminar;
-  });
+const MAX_SEGUNDOS = 15;
 
+/**
+ * Jarvis escucha: el teléfono (o el navegador) graba la pregunta con expo-audio y la manda al
+ * servidor del Paseo, que la transcribe con Whisper local. Funciona igual en Expo Go, en la app
+ * instalada y en la web, sin servicios de voz en la nube (el error «Network» del reconocedor del
+ * navegador venía de ahí). El audio no se guarda.
+ */
+export function useEscucha(alResponder: (r: ResultadoVoz) => void) {
+  const grabador = useAudioRecorder({ ...RecordingPresets.HIGH_QUALITY, isMeteringEnabled: true });
+  const [estado, setEstado] = useState<EstadoEscucha>('inactivo');
+  const [segundos, setSegundos] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const reloj = useRef<ReturnType<typeof setInterval> | null>(null);
+  const callback = useRef(alResponder);
   useEffect(() => {
-    const m = cargar();
-    if (!m) return;
-    const mod = m.ExpoSpeechRecognitionModule;
-    const subs = [
-      mod.addListener('result', (e) => {
-        const texto = e.results[0]?.transcript ?? '';
-        setParcial(texto);
-        if (e.isFinal) final.current = texto;
-      }),
-      mod.addListener('end', () => {
-        setEscuchando(false);
-        const t = final.current.trim();
-        final.current = '';
-        if (t) callback.current(t);
-      }),
-      mod.addListener('error', (e) => {
-        setEscuchando(false);
-        setError(e.error === 'no-speech' ? 'No te escuché. Intenta de nuevo.' : e.error === 'not-allowed' ? 'Permite el micrófono para hablar con Jarvis.' : `No se pudo escuchar (${e.error}).`);
-      }),
-    ];
-    return () => subs.forEach((s) => s.remove());
+    callback.current = alResponder;
+  });
+  useEffect(() => () => {
+    if (reloj.current) clearInterval(reloj.current);
   }, []);
+
+  const detener = useCallback(async () => {
+    if (reloj.current) clearInterval(reloj.current);
+    reloj.current = null;
+    if (!grabador.isRecording) return;
+    setEstado('procesando');
+    try {
+      await grabador.stop();
+      const uri = grabador.uri;
+      if (!uri) throw new Error('No se grabó audio');
+      const fd = new FormData();
+      if (Platform.OS === 'web') {
+        const blob = await (await fetch(uri)).blob();
+        fd.append('audio', blob, `voz.${blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm'}`);
+      } else {
+        fd.append('audio', { uri, name: 'voz.m4a', type: 'audio/m4a' } as any);
+      }
+      const r = await api<ResultadoVoz>('/cliente/jarvis/voz', { formulario: fd });
+      if (!r.texto) setError('No te escuché bien. Acércate al micrófono e intenta de nuevo.');
+      else callback.current(r);
+    } catch (e: any) {
+      setError(e.message ?? 'No se pudo enviar el audio');
+    } finally {
+      setEstado('inactivo');
+      await setAudioModeAsync({ allowsRecording: false }).catch(() => undefined);
+    }
+  }, [grabador]);
 
   const iniciar = useCallback(async () => {
-    const m = cargar();
-    if (!m) return;
     setError(null);
-    setParcial('');
-    const mod = m.ExpoSpeechRecognitionModule;
-    const permiso = await mod.requestPermissionsAsync();
-    if (!permiso.granted) return setError('Permite el micrófono para hablar con Jarvis.');
-    mod.start({
-      lang: 'es-419',
-      interimResults: true,
-      continuous: false,
-      // En el celular, reconocimiento en el dispositivo cuando el sistema lo soporta (sin nube)
-      requiresOnDeviceRecognition: Platform.OS !== 'web' && mod.supportsOnDeviceRecognition(),
-      contextualStrings: ['Jarvis', 'Paseo Points', 'PaseoYa', 'Panchita', 'Napoli', 'TecnoCentro', 'salteña'],
-    });
-    setEscuchando(true);
-  }, []);
+    callar();
+    try {
+      const permiso = await requestRecordingPermissionsAsync();
+      if (!permiso.granted) return setError('Permite el micrófono para hablar con Jarvis.');
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      await grabador.prepareToRecordAsync();
+      grabador.record();
+      setEstado('grabando');
+      setSegundos(0);
+      const inicio = Date.now();
+      reloj.current = setInterval(() => {
+        const s = Math.floor((Date.now() - inicio) / 1000);
+        setSegundos(s);
+        if (s >= MAX_SEGUNDOS) void detener();
+      }, 250);
+    } catch (e: any) {
+      setEstado('inactivo');
+      setError(Platform.OS === 'web' ? 'El navegador no permitió usar el micrófono. Revisa el permiso del sitio.' : `No se pudo usar el micrófono: ${e.message}`);
+    }
+  }, [grabador, detener]);
 
-  const detener = useCallback(() => {
-    cargar()?.ExpoSpeechRecognitionModule.stop();
-  }, []);
-
-  return { disponible, escuchando, parcial, error, iniciar, detener };
+  return { estado, escuchando: estado === 'grabando', segundos, error, iniciar, detener };
 }

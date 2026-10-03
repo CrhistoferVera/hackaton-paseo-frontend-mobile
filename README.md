@@ -21,17 +21,18 @@ La API (`hackaton-paseo-backend`) debe estar corriendo. Cliente demo: `70000001`
 | --- | --- |
 | Bienvenida, registro (`(auth)`) | HU-C01 registro en una pantalla con consentimiento separado y bono |
 | Ingresar | HU-C02 contraseña u OTP; sesión persistente |
-| Inicio | HU-C04 saldo en tiempo real · HU-C05 nivel · HU-C13 misiones · HU-C20 avisos por geocerca · promociones |
+| Inicio | HU-C04 saldo en tiempo real · HU-C05 nivel · HU-C13 misiones · HU-C20 avisos por geocerca · promociones · eventos de hoy |
 | Pase | HU-C03 QR TOTP que rota cada 60 s, generado sin conexión, y código de 6 dígitos |
 | Movimientos | HU-C06 historial con filtros |
 | Canjes, cupón | HU-C07 catálogo · HU-C08 cupón de un solo uso de 15 min |
-| Mapa | HU-C10 plano interactivo y buscador |
+| Mapa | HU-C10 plano interactivo con «Estás aquí», locales abiertos y cerrados, servicios, promociones, eventos, monedas y Drops en vivo; buscador de locales, productos y servicios; guía paso a paso con voz |
+| Eventos | Agenda del Paseo por día, con puntos por asistir y cómo llegar |
 | Escanear | HU-C12 check-in en la puerta · HU-X01 Llegué al Paseo · acceso a hitos, parqueo y factura |
 | AR | HU-X04 moneda en hitos · HU-X05 Drop espacial |
 | Misiones | HU-C13 misiones con progreso; la personal la propone la IA |
 | Factura | HU-C16 QR de factura SIAT |
 | Invitar | HU-C18 referidos |
-| Jarvis | HU-C21 saldo y canjes · HU-Y12 buscar productos |
+| Jarvis | HU-C21 · HU-Y12 · conversación con memoria sobre promociones, eventos, precios, tiempos, horarios, servicios, puntos y pedidos; por voz o texto |
 | Privacidad | HU-C22 permisos y eliminar cuenta |
 | Parqueo | HU-X02 parqueo con puntos (simulado) |
 | PaseoYa, producto | HU-Y01 categorías · HU-Y02 buscador global · HU-Y03 ficha |
@@ -42,11 +43,12 @@ La API (`hackaton-paseo-backend`) debe estar corriendo. Cliente demo: `70000001`
 ## Jarvis por voz
 
 - **Hablar (TTS):** `expo-speech`, el sintetizador del propio teléfono (Siri en iOS, Google en Android, Web Speech en el navegador). Es instantáneo, gratis y no usa datos. Se apaga en Perfil → «Jarvis habla en voz alta».
-- **Escuchar (STT):** `expo-speech-recognition`, el reconocedor del teléfono. En el celular usa reconocimiento en el dispositivo cuando el sistema lo soporta, y solo el texto viaja al backend. Es un módulo nativo: hace falta una build de desarrollo (`npx expo run:android` o `eas build --profile development`). En Expo Go el micrófono se oculta y se escribe la pregunta. En el navegador funciona con Chrome.
+- **Escuchar (STT):** `expo-audio` graba la pregunta (hasta 15 s) y la sube a `POST /cliente/jarvis/voz`. El servidor del Paseo la transcribe con Whisper local y Jarvis responde en la misma llamada. Funciona igual en Expo Go, en la app instalada y en el navegador. No depende del reconocedor del navegador, que enviaba el audio a Google y fallaba con «Network». El audio no se guarda.
+- **Conversación con memoria:** `src/app/jarvis.tsx` retoma la conversación al volver (`/cliente/jarvis/historial`) y muestra sugerencias, productos, eventos y promociones. Tiene botones de ruta, AR y acciones, y «Nueva conversación».
 - **Jarvis proactivo:** `components/jarvis-en-vivo.tsx` escucha `orden_voz_jarvis`, lo dice en voz alta y muestra un aviso con «Ver ruta», «Abrir AR» o «Ver pedido».
-- **Rutas:** la pantalla `ruta` dibuja el recorrido en el plano de cada piso y lee las indicaciones paso a paso. Es la alternativa sin hardware a las flechas AR en el piso.
+- **Rutas:** `components/guia-ruta.tsx` (en el Mapa y en la pantalla `ruta`) resalta el tramo del paso actual, cambia de piso sola, lee cada paso y al «Llegué» actualiza tu posición. Es la alternativa sin hardware a las flechas AR en el piso.
 
-Se eligió `expo-speech` y `expo-speech-recognition` en lugar de `react-native-tts` y `@react-native-voice/voice`. Usan los mismos motores nativos, pero están mantenidas para Expo SDK 57, se configuran con plugins en `app.json` y tienen versión web.
+Se eligió `expo-speech` (voz) y `expo-audio` (grabación) en lugar de `react-native-tts` y `@react-native-voice/voice`: están mantenidas para Expo SDK 57, funcionan en Expo Go y en la web, y la transcripción queda en el servidor del Paseo, sin nube.
 
 ## Notas
 

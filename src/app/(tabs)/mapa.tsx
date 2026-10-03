@@ -26,6 +26,8 @@ export default function Mapa() {
   const { datos: plano } = useDatos<any>('/recinto/plano');
   const { datos: capas, recargar: recargarCapas } = useDatos<DatosCapas>('/recinto/capas');
   const { datos: posicion, recargar: recargarPosicion } = useDatos<any>('/cliente/posicion');
+  const { datos: ofertas } = useDatos<any[]>('/cliente/ofertas');
+  const misOfertas = useMemo(() => new Map<string, number>((ofertas ?? []).filter((o) => o.estado === 'activa' && !o.paso).map((o) => [o.local_id, Number(o.multiplicador)])), [ofertas]);
   const [piso, setPiso] = useState<Piso>('N1');
   const [sel, setSel] = useState<Seleccion>(null);
   const [q, setQ] = useState('');
@@ -138,6 +140,7 @@ export default function Mapa() {
   }
 
   const promosSel = sel?.tipo === 'local' ? promosPorLocal.get(sel.l.id) ?? [] : [];
+  const ofertaSel = sel?.tipo === 'local' ? (ofertas ?? []).find((o) => o.local_id === sel.l.id && o.estado === 'activa' && !o.paso) : null;
 
   return (
     <Pantalla>
@@ -180,6 +183,7 @@ export default function Mapa() {
           piso={piso}
           capas={capas}
           mostrar={mostrar}
+          misOfertas={misOfertas}
           aqui={aqui}
           seleccionado={sel?.tipo === 'local' ? sel.l.id : null}
           resaltados={new Set<string>(res?.locales.map((l) => l.id) ?? [])}
@@ -188,7 +192,7 @@ export default function Mapa() {
           onEntrada={(e) => (ubicando ? void ubicarme(e.id, e.nombre) : undefined)}
         />
       </View>
-      <T v="chico" tenue>WC baños · ATM cajero automático · i información · + enfermería · L lactancia · N zona infantil · E escalera · A ascensor · ★ evento · D Drop · ×2 puntos multiplicados</T>
+      <T v="chico" tenue>TÚ ×2 tu oferta personal · WC baños · ATM cajero automático · i información · + enfermería · L lactancia · N zona infantil · E escalera · A ascensor · ★ evento · D Drop · ×2 puntos multiplicados</T>
 
       {sel?.tipo === 'local' && (
         <View style={{ gap: 8, borderTopWidth: 1, borderTopColor: C.linea, paddingTop: 12 }}>
@@ -199,6 +203,12 @@ export default function Mapa() {
           <T v="titulo" style={{ fontSize: 26 }}>{sel.l.nombre}</T>
           <T tenue>{sel.l.categoria} · {sel.l.descripcion}</T>
           <T v="chico" tenue>Atiende de {String(sel.l.horario_apertura).slice(0, 5)} a {String(sel.l.horario_cierre).slice(0, 5)}{sel.l.telefono ? ` · Tel. ${sel.l.telefono}` : ''}</T>
+          {ofertaSel && (
+            <View style={{ backgroundColor: C.sala, padding: 10, gap: 2 }}>
+              <T v="senal" oro oscuro>Tu oferta personal · {ofertaSel.hora_inicio.slice(0, 5)}–{ofertaSel.hora_fin.slice(0, 5)}</T>
+              <T oscuro>{ofertaSel.motivo}</T>
+            </View>
+          )}
           {promosSel.map((p) => (
             <View key={p.id} style={{ backgroundColor: C.veladura, padding: 10 }}>
               <T v="senal" oro>{p.tipo === 'puntos_dobles' ? `Puntos ×${Number(p.multiplicador)} ahora` : 'Promoción ahora'}</T>

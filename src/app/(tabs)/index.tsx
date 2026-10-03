@@ -18,6 +18,7 @@ export default function Inicio() {
   const { datos: misiones, recargar: recargarMisiones } = useDatos<any[]>('/cliente/misiones');
   const { datos: promos } = useDatos<any[]>('/cliente/promociones');
   const { datos: eventos } = useDatos<any[]>('/cliente/eventos');
+  const { datos: ofertas } = useDatos<any[]>('/cliente/ofertas');
   const hoyBo = new Date(Date.now() - 4 * 3600_000).toISOString().slice(0, 10);
   const deHoy = (eventos ?? []).filter((e) => e.en_curso || new Date(new Date(e.inicio).getTime() - 4 * 3600_000).toISOString().slice(0, 10) === hoyBo);
   const { datos: notifs, recargar: recargarNotifs } = useDatos<any[]>('/cliente/notificaciones');
@@ -123,6 +124,24 @@ export default function Inicio() {
         <Boton href="/escanear?modo=llegada" titulo="Llegué al Paseo" variante="claro" estilo={{ flex: 1 }} />
       </View>
       <Boton href="/jarvis" titulo="Hablar con Jarvis" variante="claro" derecha={<T v="senal" oro>Voz</T>} />
+
+      {!!ofertas?.length && (
+        <Seccion titulo="Tus ofertas de hoy">
+          {ofertas.map((o) => (
+            <View key={o.id} style={{ borderLeftWidth: 3, borderLeftColor: o.estado === 'usada' ? C.exito : o.paso ? C.linea : C.oroBrillo, paddingLeft: 12, paddingVertical: 8, gap: 4, opacity: o.paso && o.estado !== 'usada' ? 0.5 : 1 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <T style={{ fontFamily: 'Inter_600SemiBold', flex: 1 }}>{o.titulo}</T>
+                {o.estado === 'usada' ? <Etiqueta texto={`+${o.puntos_bono} pts`} tono="exito" /> : o.ahora ? <Etiqueta texto="Ahora" tono="oro" /> : <T v="dato">{o.hora_inicio.slice(0, 5)}–{o.hora_fin.slice(0, 5)}</T>}
+              </View>
+              <T v="chico" tenue>{o.motivo}</T>
+              {o.estado === 'activa' && !o.paso && (
+                <IrA href={`/ruta?destino=local:${o.local_id}`}><T v="senal" oro>Cómo llegar · {o.piso === 'T' ? 'Terrazas' : o.piso} · Local {o.numero_local}</T></IrA>
+              )}
+            </View>
+          ))}
+          <T v="chico" tenue>Jarvis las prepara cada mañana según lo que te gusta y para repartir mejor el público del Paseo. Se aplican solas al pagar con tu pase.</T>
+        </Seccion>
+      )}
 
       <Seccion titulo="Misiones para ti" accion={<IrA href="/misiones"><T v="senal" tenue>Ver todas</T></IrA>}>
         {activas.map((m) => (

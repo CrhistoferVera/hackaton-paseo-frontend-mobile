@@ -21,7 +21,7 @@ La API (`hackaton-paseo-backend`) debe estar corriendo. Cliente demo: `70000001`
 | --- | --- |
 | Bienvenida, registro (`(auth)`) | HU-C01 registro en una pantalla con consentimiento separado y bono |
 | Ingresar | HU-C02 contraseña u OTP; sesión persistente |
-| Inicio | HU-C04 saldo en tiempo real · HU-C05 nivel · HU-C13 misiones · HU-C20 avisos por geocerca · promociones · eventos de hoy |
+| Inicio | Tus ofertas de hoy (personales, generadas por la IA, con el motivo y cómo llegar) · HU-C04 saldo en tiempo real · HU-C05 nivel · HU-C13 misiones · HU-C20 avisos por geocerca · promociones · eventos de hoy |
 | Pase | HU-C03 QR TOTP que rota cada 60 s, generado sin conexión, y código de 6 dígitos |
 | Movimientos | HU-C06 historial con filtros |
 | Canjes, cupón | HU-C07 catálogo · HU-C08 cupón de un solo uso de 15 min |
@@ -42,7 +42,7 @@ La API (`hackaton-paseo-backend`) debe estar corriendo. Cliente demo: `70000001`
 
 ## Jarvis por voz
 
-- **Hablar (TTS):** `expo-speech`, el sintetizador del propio teléfono (Siri en iOS, Google en Android, Web Speech en el navegador). Es instantáneo, gratis y no usa datos. Se apaga en Perfil → «Jarvis habla en voz alta».
+- **Hablar (TTS):** voz neuronal en español nativo (Piper es_MX) generada por el servidor del Paseo y reproducida con `expo-audio`. Suena igual en Android, iPhone y la web, aunque el equipo no tenga voces en español. Empieza por la primera frase mientras prepara las siguientes. En Perfil se elige «Natural en español» o «Del teléfono» (respaldo con `expo-speech`, eligiendo una voz en español) y se puede apagar.
 - **Escuchar (STT):** `expo-audio` graba la pregunta (hasta 15 s) y la sube a `POST /cliente/jarvis/voz`. El servidor del Paseo la transcribe con Whisper local y Jarvis responde en la misma llamada. Funciona igual en Expo Go, en la app instalada y en el navegador. No depende del reconocedor del navegador, que enviaba el audio a Google y fallaba con «Network». El audio no se guarda.
 - **Conversación con memoria:** `src/app/jarvis.tsx` retoma la conversación al volver (`/cliente/jarvis/historial`) y muestra sugerencias, productos, eventos y promociones. Tiene botones de ruta, AR y acciones, y «Nueva conversación».
 - **Jarvis proactivo:** `components/jarvis-en-vivo.tsx` escucha `orden_voz_jarvis`, lo dice en voz alta y muestra un aviso con «Ver ruta», «Abrir AR» o «Ver pedido».

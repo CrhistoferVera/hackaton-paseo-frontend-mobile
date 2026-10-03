@@ -36,7 +36,7 @@ export const NOMBRE_SERVICIO: Record<string, string> = {
  * El tramo del paso actual de la guía se dibuja más intenso.
  */
 export function PlanoSvg({
-  plano, piso, resaltados, seleccionado, onLocal, onServicio, onEntrada, recorrido, tramo, aqui, capas, mostrar = {},
+  plano, piso, resaltados, seleccionado, onLocal, onServicio, onEntrada, recorrido, tramo, aqui, capas, mostrar = {}, misOfertas,
 }: {
   plano: any;
   piso: string;
@@ -49,6 +49,8 @@ export function PlanoSvg({
   tramo?: Punto[];
   aqui?: (Punto & { piso: string }) | null;
   capas?: DatosCapas | null;
+  /** ofertas personales vigentes del cliente: local → multiplicador */
+  misOfertas?: Map<string, number>;
   mostrar?: CapasMapa;
 }) {
   const zonas = plano.zonas.filter((z: any) => z.piso === piso);
@@ -131,6 +133,12 @@ export function PlanoSvg({
             <Rect x={x - 42} y={y - 28} width={84} height={56} fill={sel ? C.tinta : cerrado ? C.veladura : '#FBFAF7'} stroke={sel ? C.oroBrillo : C.lineaFuerte} strokeWidth={sel ? 3 : 1.5} />
             <SvgText x={x} y={y - 2} fontSize={15} textAnchor="middle" fill={sel ? C.papel : cerrado ? C.grafito : C.tinta}>{l.nombre.length > 11 ? l.nombre.slice(0, 10) + '…' : l.nombre}</SvgText>
             <SvgText x={x} y={y + 18} fontSize={12} textAnchor="middle" fill={sel ? C.salaOro : C.grafito}>{cerrado ? 'cerrado' : l.numero_local}</SvgText>
+            {misOfertas?.has(l.id) && (
+              <G>
+                <Rect x={x - 60} y={y - 42} width={52} height={22} fill={C.tinta} stroke={C.oroBrillo} strokeWidth={2} />
+                <SvgText x={x - 34} y={y - 26} fontSize={12} textAnchor="middle" fill={C.oroBrillo} fontWeight="bold">{`TÚ ×${misOfertas.get(l.id)}`}</SvgText>
+              </G>
+            )}
             {promo && (
               <G>
                 <Rect x={x + 26} y={y - 42} width={34} height={22} fill={C.oroBrillo} />

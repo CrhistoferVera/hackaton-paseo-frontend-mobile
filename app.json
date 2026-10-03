@@ -1,18 +1,22 @@
 {
   "expo": {
-    "name": "hackaton-paseo-frontend-mobile",
-    "slug": "hackaton-paseo-frontend-mobile",
+    "name": "Paseo Points",
+    "slug": "paseo-points",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "hackatonpaseofrontendmobile",
-    "userInterfaceStyle": "automatic",
+    "scheme": "paseopoints",
+    "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Para escanear tu pase, cupones, carteles AR y facturas.",
+        "NSLocationWhenInUseUsageDescription": "Para registrar tu llegada al Paseo y avisarte de puntos dobles cerca."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0C0B09",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -25,12 +29,42 @@
     },
     "plugins": [
       "expo-router",
+      "expo-secure-store",
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#0C0B09",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Paseo Points usa la cámara para escanear tu pase, cupones, carteles AR y facturas."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Paseo Points usa tu ubicación dentro del Paseo para registrar tu llegada y avisarte de puntos dobles cerca."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Para adjuntar el comprobante de tu pago QR."
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Para que puedas hablarle a Jarvis.",
+          "speechRecognitionPermission": "Jarvis convierte tu voz a texto en el teléfono para entender tu pregunta.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox",
+            "com.google.android.as"
+          ]
         }
       ]
     ],

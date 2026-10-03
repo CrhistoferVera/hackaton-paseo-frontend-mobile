@@ -1,65 +1,41 @@
+
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Latón y plano: papel cálido, tinta, oro solo donde hay valor (puntos, Bs, nivel).
+ * Las mismas fichas de diseño que el portal web.
  */
-
-import '@/global.css';
-
-import { Platform } from 'react-native';
-
-export const Colors = {
-  light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-  },
-  dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-  },
+export const C = {
+  papel: '#FBFAF7',
+  veladura: '#F3F0EA',
+  tinta: '#16140F',
+  grafito: '#5F594F',
+  linea: '#E4DED3',
+  lineaFuerte: '#CBC2B2',
+  oro: '#8E6A1E',
+  oroBrillo: '#C99A3A',
+  alerta: '#A8281F',
+  exito: '#3F7A5C',
+  sala: '#0C0B09',
+  salaTinta: '#EDE6D8',
+  salaGrafito: '#9A9182',
+  salaLinea: '#2C2821',
+  salaOro: '#D4AE5C',
+  bronce: '#8C5A2B',
+  plata: '#9C9A95',
+  platinum: '#4F5862',
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export const COLOR_NIVEL: Record<string, string> = { Bronce: C.bronce, Plata: C.plata, Oro: C.oroBrillo, Platinum: C.platinum };
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
-  },
-});
-
-export const Spacing = {
-  half: 2,
-  one: 4,
-  two: 8,
-  three: 16,
-  four: 24,
-  five: 32,
-  six: 64,
+export const F = {
+  display: 'BodoniModa_500Medium',
+  displayItalica: 'BodoniModa_400Regular_Italic',
+  senal: 'Montserrat_600SemiBold',
+  senalFuerte: 'Montserrat_700Bold',
+  texto: 'Inter_400Regular',
+  textoMedio: 'Inter_500Medium',
+  textoFuerte: 'Inter_600SemiBold',
+  dato: 'IBMPlexMono_400Regular',
+  datoMedio: 'IBMPlexMono_500Medium',
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;
+export const Espacio = { xs: 4, s: 8, m: 16, l: 24, xl: 32 } as const;

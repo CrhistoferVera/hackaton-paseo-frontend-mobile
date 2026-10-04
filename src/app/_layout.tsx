@@ -45,7 +45,7 @@ function Guardia() {
       <Stack.Screen name="nivel" options={{ title: 'Tu nivel' }} />
       <Stack.Screen name="misiones" options={{ title: 'Misiones' }} />
       <Stack.Screen name="cupon/[id]" options={{ title: 'Cupón' }} />
-      <Stack.Screen name="producto/[id]" options={{ title: 'Producto' }} />
+      <Stack.Screen name="producto/[id]" options={{ headerShown: false, gestureEnabled: true }} />
       <Stack.Screen name="carrito" options={{ title: 'Tu carrito' }} />
       <Stack.Screen name="pedidos" options={{ title: 'Mis pedidos' }} />
       <Stack.Screen name="pedido/[id]" options={{ title: 'Pedido' }} />

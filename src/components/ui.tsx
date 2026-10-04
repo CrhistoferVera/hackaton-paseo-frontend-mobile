@@ -42,11 +42,14 @@ export function Boton({ titulo, onPress, href, variante = 'tinta', deshabilitado
   );
 }
 
-export function Campo({ etiqueta, ayuda, ...p }: TextInputProps & { etiqueta: string; ayuda?: string }) {
+export function Campo({ etiqueta, ayuda, derecha, ...p }: TextInputProps & { etiqueta: string; ayuda?: string; derecha?: React.ReactNode }) {
   return (
     <View style={{ gap: 6 }}>
       <T v="senal" tenue>{etiqueta}</T>
-      <TextInput placeholderTextColor={C.lineaFuerte} {...p} style={[s.campo, p.style]} />
+      <View style={{ justifyContent: 'center' }}>
+        <TextInput placeholderTextColor={C.lineaFuerte} {...p} style={[s.campo, derecha ? { paddingRight: 40 } : null, p.style]} />
+        {derecha && <View style={{ position: 'absolute', right: 12 }}>{derecha}</View>}
+      </View>
       {ayuda ? <T v="chico" tenue>{ayuda}</T> : null}
     </View>
   );

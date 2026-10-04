@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { almacen } from './almacen';
 
-import { agregarItem, cambiarItem, type ItemCarrito, type TipoCarrito } from './carrito-modelo';
-export { claveItem, type ItemCarrito, type TipoCarrito } from './carrito-modelo';
+import { agregarItem, cambiarItem, type ItemCarrito, type TipoCarrito, type CartSection, getCartSection, sectionToTipo, tipoToSection } from './carrito-modelo';
+export { claveItem, getCartSection, sectionToTipo, tipoToSection, type ItemCarrito, type TipoCarrito, type CartSection } from './carrito-modelo';
 
 function useCarritoPersistido(tipo: TipoCarrito) {
   const [items, setItems] = useState<ItemCarrito[]>([]);
@@ -16,11 +16,16 @@ function useCarritoPersistido(tipo: TipoCarrito) {
       if (!vivo) return;
       const datos = v ? JSON.parse(v) : [];
       if (!Array.isArray(datos)) throw new Error('Carrito no válido');
-      setItems(datos);
+      const normalizados = datos.map((it: ItemCarrito) => ({
+        ...it,
+        ambito: it.ambito ?? (tipo === 'comida' ? 'comida' : 'tiendas'),
+        tipo: it.tipo ?? tipo,
+      }));
+      setItems(normalizados);
       setCargado(true);
     }).catch(() => { if (vivo) setError('No se pudo recuperar el carrito. Vuelve a abrir la app.'); });
     return () => { vivo = false; };
-  }, [clave]);
+  }, [clave, tipo]);
   useEffect(() => {
     if (!cargado) return;
     cola.current = cola.current.then(() => almacen.guardar(clave, JSON.stringify(items)))
@@ -28,8 +33,13 @@ function useCarritoPersistido(tipo: TipoCarrito) {
   }, [items, clave, cargado]);
   const agregar = useCallback((i: ItemCarrito) => {
     if (!cargado) return;
-    setItems(xs => agregarItem(xs, i));
-  }, [cargado]);
+    const normalizado: ItemCarrito = {
+      ...i,
+      ambito: i.ambito ?? (tipo === 'comida' ? 'comida' : 'tiendas'),
+      tipo: i.tipo ?? tipo,
+    };
+    setItems(xs => agregarItem(xs, normalizado));
+  }, [cargado, tipo]);
   const cambiar = useCallback((key: string, cantidad: number) => {
     if (!cargado) return;
     setItems(xs => cambiarItem(xs,key,cantidad));

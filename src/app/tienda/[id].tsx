@@ -57,6 +57,7 @@ export default function TiendaDetalle() {
   const tipoCarrito = (section === 'shop' || tienda?.ambito === 'tiendas') ? 'retail' : 'comida';
   const carritos = useCarrito();
   const { items } = carritos[tipoCarrito];
+  const totalCantidad = carritos.comida.cantidadTotal + carritos.retail.cantidadTotal;
 
   const [indiceFoto, setIndiceFoto] = useState(0);
 
@@ -239,16 +240,16 @@ export default function TiendaDetalle() {
         </T>
 
         <Pressable
-          onPress={() => router.push(`/carrito?tipo=${tipoCarrito}`)}
+          onPress={() => router.push(`/carrito?section=${section || (tipoCarrito === 'retail' ? 'shop' : 'food')}&tipo=${tipoCarrito}`)}
           hitSlop={10}
           style={({ pressed }) => [styles.navButton, pressed && { opacity: 0.7 }]}
-          accessibilityLabel={`Carrito, ${items.length} productos`}
+          accessibilityLabel={`Carrito, ${totalCantidad} productos`}
           accessibilityRole="button"
         >
           <Ionicons name="cart-outline" size={24} color={C.tinta} />
-          {items.length > 0 && (
+          {totalCantidad > 0 && (
             <View style={styles.cartBadge}>
-              <T style={styles.cartBadgeText}>{items.length > 99 ? '99+' : items.length}</T>
+              <T style={styles.cartBadgeText}>{totalCantidad > 99 ? '99+' : totalCantidad}</T>
             </View>
           )}
         </Pressable>

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { agregarItem, cambiarItem, claveItem } from '../src/lib/carrito-modelo.ts';
+import { agregarItem, cambiarItem, claveItem, getCartSection, sectionToTipo, tipoToSection } from '../src/lib/carrito-modelo.ts';
 const base={productoId:'p',nombre:'Producto',precioBs:10,cantidad:1,localId:'l',local:'Local',ubicacion:'N1'};
 test('comida y retail coexisten; cambiar o vaciar uno conserva el otro',()=>{
  let comida=agregarItem([],base); const retail=agregarItem([],{...base,productoId:'r'});
@@ -20,3 +20,14 @@ test('la cantidad se limita a 20 y el estado original no muta',()=>{
  const original=[base];const nuevo=agregarItem(original,{...base,cantidad:30});
  assert.equal(nuevo[0].cantidad,20);assert.equal(original[0].cantidad,1);
 });
+test('getCartSection clasifica correctamente por ámbito de la BD o tipo',()=>{
+ assert.equal(getCartSection({ ...base, ambito: 'comida' }), 'food');
+ assert.equal(getCartSection({ ...base, ambito: 'tiendas' }), 'shop');
+ assert.equal(getCartSection({ ...base, tipo: 'comida' }), 'food');
+ assert.equal(getCartSection({ ...base, tipo: 'retail' }), 'shop');
+ assert.equal(sectionToTipo('food'), 'comida');
+ assert.equal(sectionToTipo('shop'), 'retail');
+ assert.equal(tipoToSection('comida'), 'food');
+ assert.equal(tipoToSection('retail'), 'shop');
+});
+

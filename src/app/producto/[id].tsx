@@ -22,6 +22,7 @@ export default function Producto() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const carritos = useCarrito();
+  const totalCantidad = carritos.comida.cantidadTotal + carritos.retail.cantidadTotal;
 
   const [seleccion, setSeleccion] = useState<Record<string, string>>({});
   const [fotoVariante, setFotoVariante] = useState<string | null>(null);
@@ -107,16 +108,16 @@ export default function Producto() {
         </T>
 
         <Pressable
-          onPress={() => router.push(`/carrito?tipo=${tipo}`)}
+          onPress={() => router.push(`/carrito?section=${p.ambito === 'tiendas' ? 'shop' : 'food'}&tipo=${tipo}`)}
           hitSlop={10}
           style={({ pressed }) => [styles.navButton, pressed && { opacity: 0.6 }]}
-          accessibilityLabel={`Carrito, ${items.length} productos`}
+          accessibilityLabel={`Carrito, ${totalCantidad} productos`}
           accessibilityRole="button"
         >
           <Ionicons name="cart-outline" size={24} color={C.tinta} />
-          {items.length > 0 && (
+          {totalCantidad > 0 && (
             <View style={styles.cartBadge}>
-              <T style={styles.cartBadgeText}>{items.length > 99 ? '99+' : items.length}</T>
+              <T style={styles.cartBadgeText}>{totalCantidad > 99 ? '99+' : totalCantidad}</T>
             </View>
           )}
         </Pressable>
@@ -337,6 +338,8 @@ export default function Producto() {
                 varianteDetalle: grupos
                   .map((g: any) => `${g.titulo}: ${opciones.find((v: any) => v.grupo_id === g.id)?.nombre}`)
                   .join(' | '),
+                ambito: p.ambito,
+                tipo,
               });
               setMsg(`¡Agregado al carrito de ${tipo}!`);
             }}

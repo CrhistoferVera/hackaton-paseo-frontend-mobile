@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 import { Cargando, Etiqueta, Pantalla, T, Vacio } from '@/components/ui';
 import { C, F } from '@/constants/theme';
 import { bs, hora, useDatos } from '@/lib/datos';
+import { useTiempoReal } from '@/lib/tiempo-real';
 
 const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -21,9 +22,10 @@ function dia(iso: string) {
 /** Agenda de eventos del Paseo (conciertos, ferias, talleres…) con puntos por asistir y cómo llegar. */
 export default function Eventos() {
   const router = useRouter();
-  const { datos } = useDatos<any[]>('/cliente/eventos');
+  const { datos, cargando, recargar } = useDatos<any[]>('/cliente/eventos');
+  useTiempoReal({ catalogo: recargar, connect: recargar });
   if (!datos) return <Cargando />;
-  if (!datos.length) return <Pantalla><Vacio texto="No hay eventos programados por ahora." /></Pantalla>;
+  if (!datos.length) return <Pantalla onRefresh={recargar} refreshing={cargando}><Vacio texto="No hay eventos programados por ahora." /></Pantalla>;
 
   const grupos: { titulo: string; eventos: any[] }[] = [];
   for (const e of datos) {
@@ -34,7 +36,7 @@ export default function Eventos() {
   }
 
   return (
-    <Pantalla>
+    <Pantalla onRefresh={recargar} refreshing={cargando}>
       <T v="titulo">Agenda del Paseo</T>
       <T tenue>Asistir a los eventos con puntos te los suma al escanear el QR del lugar.</T>
       {grupos.map((g) => (

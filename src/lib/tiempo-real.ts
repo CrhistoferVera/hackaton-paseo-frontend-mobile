@@ -33,7 +33,7 @@ export function desconectarTiempoReal() {
 /** Saldo, cupones y pedidos se actualizan sin recargar (HU-C04, HU-Y06). */
 export function useTiempoReal(eventos: Record<string, (d: any) => void>) {
   const ref = useRef(eventos);
-  ref.current = eventos;
+  useEffect(() => { ref.current = eventos; });
 
   useEffect(() => {
     let s: Socket | null = null;

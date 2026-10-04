@@ -13,8 +13,10 @@ export default function PaseoYa() {
   const router = useRouter();
   const { local } = useLocalSearchParams<{ local?: string }>();
   const { datos: productosLocal } = useDatos<any[]>(local ? `/paseoya/productos?local=${local}` : null);
-  const { items, total } = useCarrito();
-  const [ambito, setAmbito] = useState<'' | 'comida' | 'tiendas'>('');
+  const carritos = useCarrito();
+  const [ambito, setAmbito] = useState<'comida' | 'tiendas'>('comida');
+  const tipo = ambito === 'comida' ? 'comida' : 'retail';
+  const { items, total } = carritos[tipo];
   const [categoria, setCategoria] = useState<any | null>(null);
   const [q, setQ] = useState('');
   const [resultados, setResultados] = useState<any[] | null>(null);
@@ -29,7 +31,8 @@ export default function PaseoYa() {
     setResultados(await api(`/paseoya/buscar?q=${encodeURIComponent(q)}&orden=${o}`).catch(() => []));
   }
 
-  const lista = resultados ?? (categoria ? productos : local ? productosLocal : null);
+  const dropsDelAmbito = drops?.filter(d => d.ambito === ambito) ?? [];
+  const lista = (resultados ?? (categoria ? productos : local ? productosLocal : null))?.filter(p => p.ambito === ambito);
 
   return (
     <Pantalla>
@@ -45,24 +48,24 @@ export default function PaseoYa() {
         <Boton titulo="Buscar" onPress={() => void buscar()} />
       </View>
 
-      {!!drops?.length && (
+      {!!dropsDelAmbito.length && (
         <Seccion titulo="Precios desbloqueados por Drop">
-          {drops.map((d) => (
+          {dropsDelAmbito.map((d) => (
             <Fila key={d.drop_id} titulo={d.producto} detalle={`${d.local} · normal ${bs(d.precio_bs)}`} valor={bs(d.precio_especial)} valorOro href={`/producto/${d.producto_id}?drop=${d.drop_id}`} />
           ))}
         </Seccion>
       )}
 
+      <Segmentado opciones={[{valor:'comida',texto:'Comida'},{valor:'tiendas',texto:'Retail'}]} valor={ambito} onCambio={a => { setAmbito(a); setCategoria(null); }} />
       {resultados ? (
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <T v="senal" tenue>{resultados.length} resultados</T>
+          <T v="senal" tenue>{lista?.length ?? 0} resultados</T>
           <Segmentado opciones={[{ valor: 'precio', texto: 'Precio' }, { valor: 'nombre', texto: 'Nombre' }]} valor={orden} onCambio={(o) => { setOrden(o); void buscar(o); }} />
         </View>
       ) : (
         <>
-          <Segmentado opciones={[{ valor: '', texto: 'Todo' }, { valor: 'comida', texto: 'Plaza de comidas' }, { valor: 'tiendas', texto: 'Tiendas' }]} valor={ambito} onCambio={(a) => { setAmbito(a); setCategoria(null); }} />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-            {cats?.map((c) => (
+            {cats?.filter(c => c.ambito === ambito).map((c) => (
               <Pressable key={c.id} onPress={() => setCategoria(categoria?.id === c.id ? null : c)} style={{ borderWidth: 1, borderColor: categoria?.id === c.id ? C.tinta : C.lineaFuerte, backgroundColor: categoria?.id === c.id ? C.tinta : 'transparent', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 2 }}>
                 <T v="chico" style={{ color: categoria?.id === c.id ? C.papel : C.tinta }}>{c.nombre} · {c.productos}</T>
               </Pressable>
@@ -81,12 +84,12 @@ export default function PaseoYa() {
         lista.length ? lista.map((p) => <ProductoFila key={p.id} p={p} />) : <Vacio texto={resultados ? `No encontramos «${q}». Registramos tu búsqueda para que el Paseo sepa que hace falta.` : 'Sin productos en esta categoría.'} />
       ) : (
         <Seccion titulo="Destacados">
-          {destacados?.map((p) => <ProductoFila key={p.id} p={p} />)}
+          {destacados?.filter(p => p.ambito === ambito).map((p) => <ProductoFila key={p.id} p={p} />)}
         </Seccion>
       )}
 
       {items.length > 0 && (
-        <Boton titulo={`Ver carrito · ${bs(total)}`} variante="oro" onPress={() => router.push('/carrito')} />
+        <Boton titulo={`Ver carrito de ${tipo} · ${bs(total)}`} variante="oro" onPress={() => router.push(`/carrito?tipo=${tipo}`)} />
       )}
     </Pantalla>
   );

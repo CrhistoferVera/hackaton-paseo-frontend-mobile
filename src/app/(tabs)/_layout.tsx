@@ -13,7 +13,8 @@ const ICONOS: Record<string, (c: string) => React.ReactNode> = {
 };
 
 export default function LayoutTabs() {
-  const { items } = useCarrito();
+  const { comida, retail } = useCarrito();
+  const cantidad = comida.cantidadTotal + retail.cantidadTotal;
   return (
     <Tabs
       screenOptions={({ route }) => ({
@@ -29,7 +30,7 @@ export default function LayoutTabs() {
         ),
       })}>
       <Tabs.Screen name="index" options={{ title: 'Inicio' }} />
-      <Tabs.Screen name="paseoya" options={{ title: 'PaseoYa', tabBarBadge: items.length ? items.length : undefined, tabBarBadgeStyle: { backgroundColor: C.oroBrillo, color: C.tinta, fontSize: 10 } }} />
+      <Tabs.Screen name="paseoya" options={{ title: 'PaseoYa', tabBarBadge: cantidad || undefined, tabBarBadgeStyle: { backgroundColor: C.oroBrillo, color: C.tinta, fontSize: 10 } }} />
       <Tabs.Screen name="mapa" options={{ title: 'Mapa' }} />
       <Tabs.Screen name="canjes" options={{ title: 'Canjes' }} />
       <Tabs.Screen name="perfil" options={{ title: 'Perfil' }} />

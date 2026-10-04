@@ -6,10 +6,10 @@ import { Aviso, Boton, Cargando, Etiqueta, Pantalla, T } from '@/components/ui';
 import { C, F } from '@/constants/theme';
 import { api } from '@/lib/api';
 import { useCarrito } from '@/lib/carrito';
-import { bs, hora, ubicacion, useAccion, useDatos } from '@/lib/datos';
+import { bs, ubicacion, useAccion, useDatos } from '@/lib/datos';
 import { useTiempoReal } from '@/lib/tiempo-real';
 
-const ORDEN = ['recibido', 'confirmado', 'preparando', 'listo', 'cliente_llego', 'entregado'];
+const ORDEN = ['recibido', 'preparando', 'listo', 'entregado'];
 const ETIQUETA: Record<string, string> = {
   recibido: 'Pedido recibido', confirmado: 'Confirmado por el local', preparando: 'Preparando', listo: 'Listo para recoger',
   cliente_llego: 'Avisaste que llegaste', entregado: 'Entregado', vencido: 'Vencido',
@@ -19,10 +19,10 @@ const ETIQUETA: Record<string, string> = {
 export default function Pedido() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { agregar } = useCarrito();
+  const carritos = useCarrito();
   const { datos: p, recargar } = useDatos<any>(`/cliente/pedidos/${id}`);
   const a = useAccion();
-  useTiempoReal({ pedido: () => void recargar() });
+  useTiempoReal({ pedido: () => void recargar(), connect: () => void recargar() });
 
   if (!p) return <Cargando />;
   const activos = p.subpedidos.filter((s: any) => !['entregado', 'vencido'].includes(s.estado));
@@ -51,21 +51,22 @@ export default function Pedido() {
   async function repetir() {
     const items = await a.ejecutar(() => api<any[]>(`/cliente/pedidos/${id}/repetir`, { cuerpo: {} }));
     if (!items) return;
-    for (const i of items) agregar({ productoId: i.productoId, nombre: i.producto.nombre, precioBs: Number(i.producto.precio_bs), cantidad: i.cantidad, localId: i.producto.local_id, local: i.producto.local, ubicacion: ubicacion(i.producto) });
-    router.push('/carrito');
+    for (const i of items) carritos[i.producto.ambito === 'comida' ? 'comida' : 'retail'].agregar({ productoId: i.productoId, nombre: i.producto.nombre, precioBs: i.precioBs, varianteIds: i.varianteIds, varianteDetalle: i.varianteDetalle, cantidad: i.cantidad, localId: i.producto.local_id, local: i.producto.local, ubicacion: ubicacion(i.producto) });
+    router.push(`/carrito?tipo=${p.tipo}`);
   }
 
   return (
     <Pantalla>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
         <T style={{ fontFamily: F.datoMedio, fontSize: 18 }}>{p.codigo}</T>
-        <T v="chico" tenue>Retiro {hora(p.franja_inicio)}–{hora(p.franja_fin)}</T>
+        <T v="chico" tenue>{p.tipo === 'retail' ? `Llegada estimada: ${String(p.fecha_estimada_retiro).slice(0,10)}` : 'Seguimiento en vivo'}</T>
       </View>
       <T style={{ fontFamily: F.display, fontSize: 38 }}>{bs(p.total_bs)}</T>
       <T v="chico" oro>+{Math.floor(Number(p.total_bs))} pts al retirar · paga en cada local</T>
 
       {p.subpedidos.map((s: any) => {
-        const paso = ORDEN.indexOf(s.estado);
+        const orden = p.tipo === 'retail' ? ['recibido','listo','entregado'] : ORDEN;
+        const paso = orden.indexOf(s.estado === 'confirmado' ? 'recibido' : s.estado === 'cliente_llego' ? 'listo' : s.estado);
         return (
           <View key={s.id} style={{ borderTopWidth: 1, borderTopColor: C.lineaFuerte, paddingTop: 14, gap: 10 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -75,14 +76,16 @@ export default function Pedido() {
               </View>
               <T style={{ fontFamily: F.datoMedio, fontSize: 18, letterSpacing: 2 }}>PIN {s.pin}</T>
             </View>
-            {s.items.map((i: any) => <T key={i.producto_id} v="chico">{i.cantidad} × {i.nombre} · {bs(i.precio_bs * i.cantidad)}</T>)}
+            {s.items.map((i: any) => <T key={i.id} v="chico">{i.cantidad} × {i.nombre}{i.variante_detalle ? ` · ${i.variante_detalle}` : ''} · {bs(i.precio_bs * i.cantidad)}</T>)}
             <View style={{ flexDirection: 'row', gap: 3 }}>
-              {ORDEN.map((e, k) => <View key={e} style={{ flex: 1, height: 3, backgroundColor: s.estado === 'vencido' ? C.alerta : k < paso ? C.tinta : k === paso ? C.oroBrillo : C.linea }} />)}
+              {orden.map((e, k) => <View key={e} style={{ flex: 1, height: 3, backgroundColor: s.estado === 'vencido' ? C.alerta : k < paso ? C.tinta : k === paso ? C.oroBrillo : C.linea }} />)}
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <T v="chico">{ETIQUETA[s.estado]}</T>
-              {s.estado === 'entregado' ? <Etiqueta texto={`+${s.puntos} pts`} tono="oro" /> : <T v="chico" tenue>{Math.max(paso + 1, 1)} de 6</T>}
+              {s.estado === 'entregado' ? <Etiqueta texto={`+${s.puntos} pts`} tono="oro" /> : <T v="chico" tenue>{Math.max(paso + 1, 1)} de {orden.length}</T>}
             </View>
+            <T v="chico" tenue>{orden.map(e => ETIQUETA[e]).join(' → ')}</T>
+            {p.tipo === 'comida' && ['recibido','confirmado','preparando'].includes(s.estado) && <T v="chico" oro>{s.tiempo_preparacion_min != null ? `Preparación estimada: ${s.tiempo_preparacion_min} min` : 'El restaurante confirmará la preparación'}</T>}
             {['listo', 'cliente_llego'].includes(s.estado) && (
               <View style={{ alignItems: 'center', backgroundColor: '#fff', padding: 12, borderWidth: 1, borderColor: C.linea }}>
                 <QRCode value={s.qr} size={150} color={C.tinta} />

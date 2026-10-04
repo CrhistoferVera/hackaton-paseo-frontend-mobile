@@ -11,7 +11,7 @@ import { entero } from '@/lib/datos';
  * Lector único de la app. Según el prefijo del QR:
  *  PPL: puerta de un local → check-in y puntos de descubrimiento (HU-C12)
  *  PPE: entrada del Paseo → «Llegué al Paseo» (HU-X01)
- *  PPH: cartel de un hito → moneda AR o Drop (HU-X04, HU-X05)
+ *  PPA: QR de un evento → asistencia y puntos del evento
  *  PPK: ticket de parqueo (HU-X02)
  *  Factura boliviana → puntos por factura SIAT (HU-C16)
  */
@@ -43,9 +43,9 @@ export default function Escanear() {
       } else if (texto.startsWith('PPE:')) {
         const r = await api('/cliente/llegue', { cuerpo: { fuente: 'qr_entrada', codigo: texto } });
         setEstado({ tipo: 'exito', texto: r.puntos ? `Bienvenido al Paseo: +${r.puntos} pts por tu visita de hoy.` : 'Ya registramos tu llegada de hoy.' });
-      } else if (texto.startsWith('PPH:')) {
-        router.replace(`/ar/${encodeURIComponent(texto)}`);
-        return;
+      } else if (texto.startsWith('PPA:')) {
+        const r = await api('/cliente/eventos/asistir', { cuerpo: { codigo: texto } });
+        setEstado({ tipo: 'exito', texto: r.yaRegistrada ? `Ya registramos tu asistencia a ${r.titulo}.` : r.puntos ? `¡Gracias por venir a ${r.titulo}! +${r.puntos} pts.` : `Registramos tu asistencia a ${r.titulo}.` });
       } else if (texto.startsWith('PPK:')) {
         router.replace(`/parqueo?ticket=${encodeURIComponent(texto)}`);
         return;
@@ -81,7 +81,7 @@ export default function Escanear() {
       <T tenue v="chico">
         {modo === 'llegada'
           ? 'Escanea el QR de cualquier entrada o usa tu ubicación. Sumas puntos una vez por día.'
-          : 'Puerta de un local, entrada del Paseo, cartel de un hito, ticket de parqueo o el QR de tu factura.'}
+          : 'Puerta de un local, entrada del Paseo, QR de un evento, ticket de parqueo o el QR de tu factura.'}
       </T>
       <Escaner onLeido={leido} pausado={ocupado} />
       {modo === 'llegada' && <Boton titulo="Usar mi ubicación" variante="claro" onPress={() => void llegadaPorGps()} cargando={ocupado} />}

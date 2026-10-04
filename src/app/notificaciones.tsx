@@ -20,7 +20,7 @@ export default function Notificaciones() {
           key={n.id}
           titulo={n.titulo}
           detalle={`${n.cuerpo} · ${fechaHora(n.creado_en)}`}
-          onPress={() => (n.datos?.hito ? router.push(`/ar/${encodeURIComponent(n.datos.hito)}`) : n.datos?.pedidoId ? router.push(`/pedido/${n.datos.pedidoId}`) : undefined)}
+          onPress={() => (n.datos?.dropId ? router.push('/drops') : n.datos?.pedidoId ? router.push(`/pedido/${n.datos.pedidoId}`) : n.datos?.actividadId ? router.push('/eventos') : undefined)}
         />
       ))}
     </Pantalla>

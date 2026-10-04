@@ -7,14 +7,13 @@ export interface CapasMapa {
   promos?: boolean;
   servicios?: boolean;
   eventos?: boolean;
-  monedas?: boolean;
+  drops?: boolean;
 }
 
 /** Datos en vivo del mapa (GET /recinto/capas). */
 export interface DatosCapas {
   promociones: { id: string; local_id: string; titulo: string; tipo: string; multiplicador: number }[];
-  drops: { id: string; piso: string; x: number; y: number; producto: string; cartel: string }[];
-  monedas: { id: string; codigo: string; piso: string; x: number; y: number; reclamada: boolean; puntos: number }[];
+  drops: { id: string; local_id: string; piso: string; x: number; y: number; producto: string; local: string; precio_especial: number; quedan: number }[];
   eventos: { id: string; titulo: string; piso: string | null; x: number; y: number; en_curso: boolean }[];
 }
 
@@ -32,7 +31,7 @@ export const NOMBRE_SERVICIO: Record<string, string> = {
 
 /**
  * Plano 2D de un piso: locales (atenuados si están cerrados), servicios, escaleras, ascensor y entradas,
- * más capas en vivo (promociones activas, eventos, monedas y Drops), la posición del cliente y la ruta.
+ * más capas en vivo (promociones activas, eventos y Drops sobre su local), la posición del cliente y la ruta.
  * El tramo del paso actual de la guía se dibuja más intenso.
  */
 export function PlanoSvg({
@@ -157,15 +156,8 @@ export function PlanoSvg({
           </G>
         ))}
 
-      {mostrar.monedas !== false &&
-        (capas?.monedas ?? []).filter((m) => m.piso === piso && !m.reclamada).map((m) => (
-          <G key={m.id}>
-            <Circle cx={Number(m.x) + 30} cy={Number(m.y)} r={14} fill={C.oroBrillo} stroke={C.oro} strokeWidth={3} />
-            <SvgText x={Number(m.x) + 30} y={Number(m.y) + 5} fontSize={12} textAnchor="middle" fill={C.tinta} fontWeight="bold">{m.puntos}</SvgText>
-          </G>
-        ))}
-      {mostrar.monedas !== false &&
-        (capas?.drops ?? []).filter((d) => d.piso === piso).map((d) => (
+      {mostrar.drops !== false &&
+        (capas?.drops ?? []).filter((d) => d.piso === piso && d.quedan > 0).map((d) => (
           <G key={d.id}>
             <Rect x={Number(d.x) - 48} y={Number(d.y) - 14} width={28} height={28} fill={C.tinta} stroke={C.oroBrillo} strokeWidth={3} />
             <SvgText x={Number(d.x) - 34} y={Number(d.y) + 6} fontSize={15} textAnchor="middle" fill={C.oroBrillo} fontWeight="bold">D</SvgText>

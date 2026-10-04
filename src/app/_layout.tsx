@@ -37,7 +37,7 @@ function Guardia() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="pase" options={{ presentation: 'modal', headerShown: false, contentStyle: { backgroundColor: C.sala } }} />
-      <Stack.Screen name="ar/[codigo]" options={{ headerShown: false, contentStyle: { backgroundColor: C.sala } }} />
+      <Stack.Screen name="drops" options={{ title: 'Drops' }} />
       <Stack.Screen name="escanear" options={{ title: 'Escanear' }} />
       <Stack.Screen name="movimientos" options={{ title: 'Movimientos' }} />
       <Stack.Screen name="nivel" options={{ title: 'Tu nivel' }} />

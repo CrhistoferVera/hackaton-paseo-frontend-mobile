@@ -25,10 +25,10 @@ La API (`hackaton-paseo-backend`) debe estar corriendo. Cliente demo: `70000001`
 | Pase | HU-C03 QR TOTP que rota cada 60 s, generado sin conexión, y código de 6 dígitos |
 | Movimientos | HU-C06 historial con filtros |
 | Canjes, cupón | HU-C07 catálogo · HU-C08 cupón de un solo uso de 15 min |
-| Mapa | HU-C10 plano interactivo con «Estás aquí», locales abiertos y cerrados, servicios, promociones, eventos, monedas y Drops en vivo; buscador de locales, productos y servicios; guía paso a paso con voz |
+| Mapa | HU-C10 plano interactivo con «Estás aquí», locales abiertos y cerrados, servicios, promociones, eventos y Drops en vivo (sobre su local); buscador de locales, productos y servicios; guía paso a paso con voz |
 | Eventos | Agenda del Paseo por día, con puntos por asistir y cómo llegar |
-| Escanear | HU-C12 check-in en la puerta · HU-X01 Llegué al Paseo · acceso a hitos, parqueo y factura |
-| AR | HU-X04 moneda en hitos · HU-X05 Drop espacial |
+| Escanear | HU-C12 check-in en la puerta · HU-X01 Llegué al Paseo · QR de asistencia a eventos (`PPA:`) · parqueo y factura |
+| Drops | HU-X05 ofertas relámpago: se reclaman dentro del Paseo y desbloquean el precio en PaseoYa |
 | Misiones | HU-C13 misiones con progreso; la personal la propone la IA |
 | Factura | HU-C16 QR de factura SIAT |
 | Invitar | HU-C18 referidos |
@@ -44,14 +44,14 @@ La API (`hackaton-paseo-backend`) debe estar corriendo. Cliente demo: `70000001`
 
 - **Hablar (TTS):** voz neuronal en español nativo (Piper es_MX) generada por el servidor del Paseo y reproducida con `expo-audio`. Suena igual en Android, iPhone y la web, aunque el equipo no tenga voces en español. Empieza por la primera frase mientras prepara las siguientes. En Perfil se elige «Natural en español» o «Del teléfono» (respaldo con `expo-speech`, eligiendo una voz en español) y se puede apagar.
 - **Escuchar (STT):** `expo-audio` graba la pregunta (hasta 15 s) y la sube a `POST /cliente/jarvis/voz`. El servidor del Paseo la transcribe con Whisper local y Jarvis responde en la misma llamada. Funciona igual en Expo Go, en la app instalada y en el navegador. No depende del reconocedor del navegador, que enviaba el audio a Google y fallaba con «Network». El audio no se guarda.
-- **Conversación con memoria:** `src/app/jarvis.tsx` retoma la conversación al volver (`/cliente/jarvis/historial`) y muestra sugerencias, productos, eventos y promociones. Tiene botones de ruta, AR y acciones, y «Nueva conversación».
-- **Jarvis proactivo:** `components/jarvis-en-vivo.tsx` escucha `orden_voz_jarvis`, lo dice en voz alta y muestra un aviso con «Ver ruta», «Abrir AR» o «Ver pedido».
-- **Rutas:** `components/guia-ruta.tsx` (en el Mapa y en la pantalla `ruta`) resalta el tramo del paso actual, cambia de piso sola, lee cada paso y al «Llegué» actualiza tu posición. Es la alternativa sin hardware a las flechas AR en el piso.
+- **Conversación con memoria:** `src/app/jarvis.tsx` retoma la conversación al volver (`/cliente/jarvis/historial`) y muestra sugerencias, productos, eventos y promociones. Tiene botones de ruta y acciones, y «Nueva conversación».
+- **Jarvis proactivo:** `components/jarvis-en-vivo.tsx` escucha `orden_voz_jarvis`, lo dice en voz alta y muestra un aviso con «Ver ruta», «Ver Drop» o «Ver pedido».
+- **Rutas:** `components/guia-ruta.tsx` (en el Mapa y en la pantalla `ruta`) resalta el tramo del paso actual, cambia de piso sola, lee cada paso y al «Llegué» actualiza tu posición.
+- **Si el micrófono no funciona:** en Expo Go o la app instalada, revisa el permiso de micrófono de la app. En el navegador del celular el micrófono solo funciona con https o en `localhost`; por la IP de la red (`http://192.168.x.x:8081`) el navegador lo bloquea, así que usa Expo Go o escribe la pregunta.
 
 Se eligió `expo-speech` (voz) y `expo-audio` (grabación) en lugar de `react-native-tts` y `@react-native-voice/voice`: están mantenidas para Expo SDK 57, funcionan en Expo Go y en la web, y la transcripción queda en el servidor del Paseo, sin nube.
 
 ## Notas
 
 - El pase se calcula en el celular con HMAC-SHA1 (`src/lib/totp.ts`); el secreto vive en el llavero seguro.
-- La experiencia AR usa la cámara de fondo y reconoce el QR del cartel. El rastreo de imagen sin QR (MindAR) queda para una versión posterior.
 - Las notificaciones de Drops y puntos dobles llegan por Socket.IO mientras la app está abierta. Para avisos con la app cerrada hace falta una build de desarrollo con `expo-notifications`.

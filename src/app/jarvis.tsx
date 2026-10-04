@@ -223,10 +223,9 @@ function Burbuja({ m, onRuta, onIr, onPregunta }: { m: Mensaje; onRuta: (r: any)
           ))}
         </View>
       )}
-      {(r?.ruta || r?.ar || r?.acciones?.length) && (
+      {(r?.ruta || r?.acciones?.length) && (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
           {r.ruta && <Accion oro texto={`Ver ruta · ${r.ruta.metros} m`} onPress={() => onRuta(r.ruta)} />}
-          {r.ar && <Accion texto={r.ar.tipo === 'drop' ? 'Abrir caja AR' : 'Ver moneda AR'} onPress={() => onIr(`/ar/${encodeURIComponent(r.ar.codigo)}`)} />}
           {r.acciones?.filter((a: any) => a.ruta !== '/ruta' || !r.ruta).map((a: any) => <Accion key={a.ruta} texto={a.etiqueta} onPress={() => onIr(a.ruta)} />)}
         </View>
       )}

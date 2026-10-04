@@ -8,7 +8,7 @@ import { useDatos } from '@/lib/datos';
 import { mostrarRuta, useRutaActual } from '@/lib/jarvis';
 
 /**
- * Ruta paso a paso sobre el plano (alternativa sin hardware al wayfinding con flechas AR):
+ * Ruta paso a paso sobre el plano:
  * el tramo del paso actual se resalta en el piso que corresponde y Jarvis lo lee en voz alta.
  */
 export default function Ruta() {

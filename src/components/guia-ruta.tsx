@@ -59,7 +59,7 @@ export function GuiaRuta({ ruta, plano, capas, onTerminar, alLlegar }: { ruta: R
         <Segmentado opciones={pisos.map((p) => ({ valor: p, texto: NOMBRE_PISO[p] }))} valor={piso} onCambio={setPisoVista} />
       )}
       <View style={{ borderWidth: 1, borderColor: C.linea }}>
-        <PlanoSvg plano={plano} piso={piso} recorrido={recorrido} tramo={tramo} capas={capas} aqui={inicio ? { x: inicio.x, y: inicio.y, piso: inicio.piso } : null} mostrar={{ servicios: true, promos: true, eventos: false, monedas: true }} />
+        <PlanoSvg plano={plano} piso={piso} recorrido={recorrido} tramo={tramo} capas={capas} aqui={inicio ? { x: inicio.x, y: inicio.y, piso: inicio.piso } : null} mostrar={{ servicios: true, promos: true, eventos: false, drops: true }} />
       </View>
 
       <View style={{ backgroundColor: C.sala, padding: 16, gap: 10 }}>

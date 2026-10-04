@@ -25,7 +25,7 @@ export default function Privacidad() {
   return (
     <Pantalla>
       <T tenue v="chico">Aceptaste los términos el {fecha(datos.consent_terminos_en)}. Estos permisos son independientes y puedes cambiarlos cuando quieras.</T>
-      <Interruptor titulo="Ubicación dentro del Paseo" detalle="Avisos de puntos dobles cerca, registro de llegada y monedas AR." valor={datos.consent_ubicacion} onCambio={(v) => void cambiar('consentUbicacion', v)} />
+      <Interruptor titulo="Ubicación dentro del Paseo" detalle="Avisos de puntos dobles y Drops cerca, registro de llegada y rutas dentro del Paseo." valor={datos.consent_ubicacion} onCambio={(v) => void cambiar('consentUbicacion', v)} />
       <Interruptor titulo="Personalización" detalle="Misiones y promociones según tus compras. Sin esto, ves solo las generales." valor={datos.consent_personalizacion} onCambio={(v) => void cambiar('consentPersonalizacion', v)} />
       <Interruptor titulo="Mostrar mi nombre a los locales" detalle="Si lo desactivas, los locales te ven con un alias en sus rankings." valor={datos.mostrar_nombre_locales} onCambio={(v) => void cambiar('mostrarNombreLocales', v)} />
       <T v="chico" tenue>La analítica del Paseo usa un identificador seudónimo y solo muestra grupos de 5 personas o más.</T>

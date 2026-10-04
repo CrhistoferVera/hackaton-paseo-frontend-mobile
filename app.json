@@ -10,7 +10,8 @@
     "ios": {
       "icon": "./assets/expo.icon",
       "infoPlist": {
-        "NSCameraUsageDescription": "Para escanear tu pase, cupones, carteles AR y facturas.",
+        "NSCameraUsageDescription": "Para escanear los QR del Paseo, tu ticket de parqueo y tus facturas.",
+        "NSMicrophoneUsageDescription": "Para que puedas hablarle a Jarvis. El audio se transcribe en el servidor del Paseo y no se guarda.",
         "NSLocationWhenInUseUsageDescription": "Para registrar tu llegada al Paseo y avisarte de puntos dobles cerca."
       }
     },
@@ -41,7 +42,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Paseo Points usa la cámara para escanear tu pase, cupones, carteles AR y facturas."
+          "cameraPermission": "Paseo Points usa la cámara para escanear los QR del Paseo, tu ticket de parqueo y tus facturas."
         }
       ],
       [

@@ -17,7 +17,6 @@ export interface OrdenJarvis {
   motor?: string;
   latenciaMs?: number;
   ruta?: RutaJarvis;
-  ar?: { tipo: 'drop' | 'moneda'; codigo: string; lugar: string };
   acciones?: { etiqueta: string; ruta: string }[];
 }
 

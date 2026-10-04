@@ -86,7 +86,7 @@ export default function Inicio() {
       </View>
 
       {aviso && (
-        <Pressable onPress={() => { setAviso(null); if (aviso.datos?.hito) router.push(`/ar/${encodeURIComponent(aviso.datos.hito)}`); else if (aviso.datos?.pedidoId) router.push(`/pedido/${aviso.datos.pedidoId}`); }} style={{ backgroundColor: C.sala, padding: 14, gap: 4 }}>
+        <Pressable onPress={() => { setAviso(null); if (aviso.datos?.dropId) router.push('/drops'); else if (aviso.datos?.pedidoId) router.push(`/pedido/${aviso.datos.pedidoId}`); }} style={{ backgroundColor: C.sala, padding: 14, gap: 4 }}>
           <T v="senal" oro oscuro>{aviso.titulo}</T>
           <T oscuro>{aviso.cuerpo}</T>
         </Pressable>

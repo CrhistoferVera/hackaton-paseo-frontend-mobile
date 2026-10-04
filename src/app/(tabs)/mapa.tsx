@@ -17,7 +17,7 @@ type Seleccion = { tipo: 'local'; l: any } | { tipo: 'servicio'; s: any } | null
 
 /**
  * HU-C10: mapa interactivo con guía. Muestra dónde estás (último QR, compra o «estoy aquí»), los locales
- * abiertos y cerrados, servicios, promociones activas, eventos, monedas y Drops en vivo. Al elegir un lugar,
+ * abiertos y cerrados, servicios, promociones activas, eventos y Drops en vivo. Al elegir un lugar,
  * «Cómo llegar» dibuja la ruta sobre el plano y guía paso a paso con voz.
  */
 export default function Mapa() {
@@ -32,7 +32,7 @@ export default function Mapa() {
   const [sel, setSel] = useState<Seleccion>(null);
   const [q, setQ] = useState('');
   const [res, setRes] = useState<{ locales: any[]; productos: any[] } | null>(null);
-  const [mostrar, setMostrar] = useState<CapasMapa>({ promos: true, servicios: true, eventos: true, monedas: true });
+  const [mostrar, setMostrar] = useState<CapasMapa>({ promos: true, servicios: true, eventos: true, drops: true });
   const [ruta, setRuta] = useState<RutaJarvis | null>(null);
   const [ubicando, setUbicando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -141,6 +141,7 @@ export default function Mapa() {
 
   const promosSel = sel?.tipo === 'local' ? promosPorLocal.get(sel.l.id) ?? [] : [];
   const ofertaSel = sel?.tipo === 'local' ? (ofertas ?? []).find((o) => o.local_id === sel.l.id && o.estado === 'activa' && !o.paso) : null;
+  const dropSel = sel?.tipo === 'local' ? (capas?.drops ?? []).find((d) => d.local_id === sel.l.id && d.quedan > 0) : null;
 
   return (
     <Pantalla>
@@ -170,7 +171,7 @@ export default function Mapa() {
 
       <Segmentado opciones={PISOS} valor={piso} onCambio={setPiso} />
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-        {([['promos', 'Promociones'], ['servicios', 'Servicios'], ['eventos', 'Eventos'], ['monedas', 'Monedas y Drops']] as [keyof CapasMapa, string][]).map(([k, t]) => (
+        {([['promos', 'Promociones'], ['servicios', 'Servicios'], ['eventos', 'Eventos'], ['drops', 'Drops']] as [keyof CapasMapa, string][]).map(([k, t]) => (
           <Pressable key={k} onPress={() => alternar(k)} style={{ borderWidth: 1, borderColor: mostrar[k] ? C.tinta : C.linea, backgroundColor: mostrar[k] ? C.tinta : 'transparent', paddingHorizontal: 10, paddingVertical: 6 }}>
             <T v="chico" style={{ color: mostrar[k] ? C.papel : C.grafito }}>{t}</T>
           </Pressable>
@@ -203,6 +204,13 @@ export default function Mapa() {
           <T v="titulo" style={{ fontSize: 26 }}>{sel.l.nombre}</T>
           <T tenue>{sel.l.categoria} · {sel.l.descripcion}</T>
           <T v="chico" tenue>Atiende de {String(sel.l.horario_apertura).slice(0, 5)} a {String(sel.l.horario_cierre).slice(0, 5)}{sel.l.telefono ? ` · Tel. ${sel.l.telefono}` : ''}</T>
+          {dropSel && (
+            <Pressable onPress={() => router.push('/drops')} style={{ borderWidth: 2, borderColor: C.oroBrillo, padding: 10, gap: 2 }}>
+              <T v="senal" oro>Drop · quedan {dropSel.quedan}</T>
+              <T>{dropSel.producto} a Bs {Number(dropSel.precio_especial).toFixed(2)}</T>
+              <T v="chico" tenue>Toca para reclamarlo</T>
+            </Pressable>
+          )}
           {ofertaSel && (
             <View style={{ backgroundColor: C.sala, padding: 10, gap: 2 }}>
               <T v="senal" oro oscuro>Tu oferta personal · {ofertaSel.hora_inicio.slice(0, 5)}–{ofertaSel.hora_fin.slice(0, 5)}</T>

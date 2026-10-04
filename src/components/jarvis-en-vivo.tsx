@@ -51,10 +51,9 @@ export function JarvisEnVivo() {
           </View>
         </View>
         <T oscuro style={{ fontSize: 16, lineHeight: 22 }}>{orden.texto}</T>
-        {(orden.ruta || orden.ar || orden.acciones?.length) && (
+        {(orden.ruta || orden.acciones?.length) && (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
             {orden.ruta && <Accion texto={`Ver ruta · ${orden.ruta.metros} m`} onPress={() => { cerrar(); router.push('/ruta'); }} oro />}
-            {orden.ar && <Accion texto={orden.ar.tipo === 'drop' ? 'Abrir caja AR' : 'Ver moneda AR'} onPress={() => { cerrar(); router.push(`/ar/${encodeURIComponent(orden.ar!.codigo)}`); }} />}
             {orden.acciones?.map((a) => <Accion key={a.ruta} texto={a.etiqueta} onPress={() => { cerrar(); router.push(a.ruta as any); }} />)}
           </View>
         )}

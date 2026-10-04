@@ -11,9 +11,9 @@ export default function Perfil() {
   const [vozActiva, setVozActiva] = useVozActiva();
   const [modoVoz, setModoVoz] = useModoVoz();
   const { datos: yo } = useDatos<any>('/auth/yo');
-  const { datos: r } = useDatos<any>('/cliente/resumen');
+  const { datos: r, recargar, cargando } = useDatos<any>('/cliente/resumen');
   return (
-    <Pantalla>
+    <Pantalla onRefresh={recargar} refreshing={cargando}>
       <T v="senal" oro>Tu cuenta</T>
       <T v="titulo">{usuario?.nombre}</T>
       <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
@@ -23,11 +23,9 @@ export default function Perfil() {
       {yo?.intereses?.length > 0 && <T v="chico" tenue>Intereses: {yo.intereses.join(', ')}</T>}
 
       <Seccion titulo="Puntos">
-        <Fila titulo="Movimientos" detalle="Ganancias, canjes, bonos y vencimientos" href="/movimientos" />
+        <Fila titulo="Historial de puntos" detalle="Ganancias, canjes, bonos y vencimientos" href="/movimientos" />
         <Fila titulo="Nivel y beneficios" href="/nivel" />
         <Fila titulo="Misiones" href="/misiones" />
-        <Fila titulo="Escanear factura" detalle="Suma puntos con el QR de tu factura del día" href="/factura" />
-        <Fila titulo="Parqueo" detalle="Paga horas de parqueo con puntos" href="/parqueo" />
       </Seccion>
       <Seccion titulo="PaseoYa">
         <Fila titulo="Mis pedidos" href="/pedidos" />

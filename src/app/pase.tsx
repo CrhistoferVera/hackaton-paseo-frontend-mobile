@@ -16,7 +16,7 @@ export default function Pase() {
   const { usuario } = useSesion();
   const { datos: r } = useDatos<any>('/cliente/resumen');
   const [pase, setPase] = useState<{ codigoCliente: string; secreto: string } | null>(null);
-  const [ahora, setAhora] = useState(Date.now());
+  const [ahora, setAhora] = useState(() => Date.now());
   const [acreditado, setAcreditado] = useState<any | null>(null);
 
   useEffect(() => {
@@ -65,8 +65,8 @@ export default function Pase() {
           <T v="chico" oscuro tenue>Firmado · rota cada 60 s</T>
           <T v="chico" oscuro tenue style={{ fontVariant: ['tabular-nums'] }}>Se renueva en {restantes} s</T>
         </View>
-        <T oscuro style={{ fontFamily: F.datoMedio, fontSize: 34, letterSpacing: 6, textAlign: 'center' }}>{codigo.slice(0, 3)} {codigo.slice(3)}</T>
-        <T v="chico" oscuro tenue style={{ textAlign: 'center' }}>Si la cámara no lee el código, díctale al cajero los últimos 4 dígitos de tu celular y estos 6 dígitos.</T>
+        <T oscuro style={{ fontFamily: F.datoMedio, fontSize: 22, letterSpacing: 2, textAlign: 'center' }}>{pase ? `${pase.codigoCliente}:${codigo}` : 'Cargando…'}</T>
+        <T v="chico" oscuro tenue style={{ textAlign: 'center' }}>Código único del cliente. Si no se puede escanear el QR, dicta este código completo al comercio.</T>
       </View>
     </SafeAreaView>
   );

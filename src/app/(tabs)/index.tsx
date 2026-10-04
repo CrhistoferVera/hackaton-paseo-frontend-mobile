@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, Platform, Pressable, View } from 'react-native';
 import { Aviso, Barra, Boton, ChipNivel, Etiqueta, Fila, IrA, Pantalla, Seccion, T } from '@/components/ui';
 import { C } from '@/constants/theme';
@@ -14,24 +14,34 @@ import { useTiempoReal } from '@/lib/tiempo-real';
 export default function Inicio() {
   const { usuario } = useSesion();
   const router = useRouter();
-  const { datos: r, recargar } = useDatos<any>('/cliente/resumen');
+  const { datos: r, recargar, error: errorSaldo } = useDatos<any>('/cliente/resumen');
   const { datos: misiones, recargar: recargarMisiones } = useDatos<any[]>('/cliente/misiones');
-  const { datos: promos } = useDatos<any[]>('/cliente/promociones');
-  const { datos: eventos } = useDatos<any[]>('/cliente/eventos');
-  const { datos: ofertas } = useDatos<any[]>('/cliente/ofertas');
-  const hoyBo = new Date(Date.now() - 4 * 3600_000).toISOString().slice(0, 10);
+  const { datos: promos, recargar: recargarPromos } = useDatos<any[]>('/cliente/promociones');
+  const { datos: eventos, recargar: recargarEventos } = useDatos<any[]>('/cliente/eventos');
+  const { datos: ofertas, recargar: recargarOfertas } = useDatos<any[]>('/cliente/ofertas');
+  const [hoyBo, setHoyBo] = useState(() => new Date(Date.now() - 4 * 3600_000).toISOString().slice(0, 10));
+  const [refreshing, setRefreshing] = useState(false);
   const deHoy = (eventos ?? []).filter((e) => e.en_curso || new Date(new Date(e.inicio).getTime() - 4 * 3600_000).toISOString().slice(0, 10) === hoyBo);
   const { datos: notifs, recargar: recargarNotifs } = useDatos<any[]>('/cliente/notificaciones');
   const [ultimo, setUltimo] = useState<{ puntos: number; descripcion: string } | null>(null);
   const [aviso, setAviso] = useState<any | null>(null);
-  const linea = useRef(new Animated.Value(0)).current;
+  const [linea] = useState(() => new Animated.Value(0));
 
   const acunar = () => {
     linea.setValue(0);
     Animated.timing(linea, { toValue: 1, duration: 1100, useNativeDriver: false }).start();
   };
 
+  async function refrescar() {
+    setRefreshing(true);
+    setHoyBo(new Date(Date.now() - 4 * 3600_000).toISOString().slice(0,10));
+    try { await Promise.all([recargar(),recargarMisiones(),recargarPromos(),recargarEventos(),recargarOfertas(),recargarNotifs()]); }
+    finally { setRefreshing(false); }
+  }
   useTiempoReal({
+    connect: () => void refrescar(),
+    catalogo: () => { void recargarPromos(); void recargarEventos(); },
+    canje: () => void recargar(),
     puntos: (d: any) => {
       if (d.puntos) {
         setUltimo({ puntos: d.puntos, descripcion: d.descripcion });
@@ -76,7 +86,7 @@ export default function Inicio() {
   const activas = misiones?.filter((m) => !m.completada).slice(0, 3) ?? [];
 
   return (
-    <Pantalla>
+    <Pantalla onRefresh={refrescar} refreshing={refreshing}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <T tenue>Hola, {usuario?.nombre.split(' ')[0]}</T>
         <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
@@ -94,15 +104,15 @@ export default function Inicio() {
 
       <View>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-          <T v="cifra">{r ? entero(r.saldo) : '—'}</T>
-          <T v="senal" oro>puntos</T>
+          <T v="cifra">{r ? entero(r.disponible) : '—'}</T>
+          <T v="senal" oro>puntos disponibles</T>
         </View>
         <Animated.View style={{ height: 1, backgroundColor: C.oroBrillo, marginTop: 10, width: linea.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }} />
         {r && (
           <T v="chico" tenue style={{ marginTop: 8 }}>
             Equivale a {bs(r.valorBs)}
             {r.porVencer[0] ? ` · ${entero(r.porVencer[0].puntos)} vencen el ${fecha(r.porVencer[0].fecha)}` : ''}
-            {r.reservado ? ` · ${entero(r.reservado)} reservados en cupones` : ''}
+            {r.reservado ? ` · Saldo total: ${entero(r.saldo)} · ${entero(r.reservado)} reservados en cupones` : ''}
           </T>
         )}
         {ultimo && <T v="chico" oro style={{ marginTop: 4 }}>{ultimo.puntos > 0 ? '+' : ''}{entero(ultimo.puntos)} · {ultimo.descripcion}</T>}
@@ -119,10 +129,8 @@ export default function Inicio() {
       )}
 
       <Boton href="/pase" titulo="Mostrar mi pase" derecha={<T oscuro oro v="senal">QR</T>} />
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Boton href="/escanear" titulo="Escanear" variante="claro" estilo={{ flex: 1 }} />
-        <Boton href="/escanear?modo=llegada" titulo="Llegué al Paseo" variante="claro" estilo={{ flex: 1 }} />
-      </View>
+      <Boton href="/escanear" titulo="Escanear QR · llegada y puntos" variante="claro" />
+      <Boton href="/movimientos" titulo="Historial de puntos" variante="claro" />
       <Boton href="/jarvis" titulo="Hablar con Jarvis" variante="claro" derecha={<T v="senal" oro>Voz</T>} />
 
       {!!ofertas?.length && (
@@ -164,6 +172,7 @@ export default function Inicio() {
           ))}
         </Seccion>
       )}
+      <Aviso texto={errorSaldo} tipo="error" />
       <Aviso texto={!r ? null : r.saldo === 0 ? 'Muestra tu pase al pagar en cualquier local del Paseo para empezar a sumar.' : null} />
     </Pantalla>
   );

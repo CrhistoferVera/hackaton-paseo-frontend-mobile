@@ -1,22 +1,27 @@
 import { useState } from 'react';
 import { ScrollView } from 'react-native';
-import { Cargando, Fila, Pantalla, Segmentado, T, Vacio } from '@/components/ui';
+import { Aviso, Cargando, Fila, Pantalla, Segmentado, T, Vacio } from '@/components/ui';
+import { useTiempoReal } from '@/lib/tiempo-real';
 import { bs, fechaHora, useDatos } from '@/lib/datos';
 
 const TIPOS = [
-  { valor: '', texto: 'Todos' }, { valor: 'compra', texto: 'Compras' }, { valor: 'canje', texto: 'Canjes' }, { valor: 'bono', texto: 'Bonos' },
+  { valor: '', texto: 'Todos' }, { valor: 'compra', texto: 'Compras' }, { valor: 'canje', texto: 'Canjes' }, { valor: 'bono', texto: 'Bonos' }, { valor: 'anulacion', texto: 'Anulaciones' },
   { valor: 'mision', texto: 'Misiones' }, { valor: 'paseoya', texto: 'PaseoYa' }, { valor: 'referido', texto: 'Referidos' }, { valor: 'vencimiento', texto: 'Vencidos' },
 ];
-const RANGOS = [{ valor: '7', texto: '7 días' }, { valor: '30', texto: '30 días' }, { valor: '365', texto: 'Año' }];
+const RANGOS = [{ valor: '7', texto: '7 días' }, { valor: '30', texto: '30 días' }, { valor: '365', texto: 'Año' }, { valor: '0', texto: 'Todo' }];
 
 /** HU-C06: historial con filtros por tipo y fecha. */
 export default function Movimientos() {
   const [tipo, setTipo] = useState('');
   const [rango, setRango] = useState('30');
-  const desde = new Date(Date.now() - Number(rango) * 86400_000).toISOString().slice(0, 10);
-  const { datos } = useDatos<any[]>(`/cliente/movimientos?desde=${desde}${tipo ? `&tipo=${tipo}` : ''}`);
+  const [ahora] = useState(() => Date.now());
+  const desde = rango === '0' ? '1970-01-01' : new Date(ahora - Number(rango) * 86400_000).toISOString().slice(0, 10);
+  const { datos, recargar, cargando, error } = useDatos<any[]>(`/cliente/movimientos?desde=${desde}${tipo ? `&tipo=${tipo}` : ''}`);
+  useTiempoReal({ puntos: () => void recargar(), canje: () => void recargar(), connect: () => void recargar() });
   return (
-    <Pantalla>
+    <Pantalla onRefresh={recargar} refreshing={cargando}>
+      <T v="titulo">Historial de puntos</T>
+      <Aviso texto={error} tipo="error" />
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <Segmentado opciones={TIPOS} valor={tipo} onCambio={setTipo} />
       </ScrollView>

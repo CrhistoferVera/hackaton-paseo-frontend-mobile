@@ -11,7 +11,7 @@ import { useTiempoReal } from '@/lib/tiempo-real';
 export default function Cupon() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { datos, recargar } = useDatos<any[]>('/cliente/canjes');
-  const [ahora, setAhora] = useState(Date.now());
+  const [ahora, setAhora] = useState(() => Date.now());
   useTiempoReal({ canje: () => void recargar() });
   useEffect(() => {
     const t = setInterval(() => setAhora(Date.now()), 1000);
@@ -48,6 +48,8 @@ export default function Cupon() {
           </View>
         </View>
       </View>
+      <T v="senal" tenue>Código para canjear en el comercio</T>
+      <T selectable style={{fontFamily:F.datoMedio,fontSize:18,textAlign:'center'}}>{c.codigo}</T>
       <T v="chico" tenue>Los {entero(c.costo_puntos)} puntos se descuentan cuando el local valide el cupón. Si vence, no pierdes nada.</T>
     </Pantalla>
   );

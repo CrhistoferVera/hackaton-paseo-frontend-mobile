@@ -1,5 +1,6 @@
+import { useRef } from 'react';
 import { useRouter, type Href } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps, type TextProps, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps, type TextProps, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { C, COLOR_NIVEL, F } from '@/constants/theme';
 
@@ -11,12 +12,23 @@ export function T({ v = 'texto', style, oro, tenue, oscuro, ...p }: TextProps & 
   return <Text {...p} style={[s[v], { color }, style]} />;
 }
 
-export function Pantalla({ children, oscuro, desplazable = true, contenido }: { children: React.ReactNode; oscuro?: boolean; desplazable?: boolean; contenido?: ViewStyle }) {
+export function Pantalla({ children, oscuro, desplazable = true, contenido, onRefresh, refreshing = false }: { children: React.ReactNode; oscuro?: boolean; desplazable?: boolean; contenido?: ViewStyle; onRefresh?: () => void | Promise<void>; refreshing?: boolean }) {
+  const inicioArrastre = useRef<number | null>(null);
+  const scrollY = useRef(0);
   const fondo = { backgroundColor: oscuro ? C.sala : C.papel, flex: 1 };
   return (
     <SafeAreaView style={fondo} edges={['top']}>
       {desplazable ? (
-        <ScrollView contentContainerStyle={[{ padding: 20, paddingBottom: 48, gap: 16 }, contenido]} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          onScroll={e => { scrollY.current = e.nativeEvent.contentOffset.y; }} scrollEventThrottle={16}
+          onTouchStart={e => { if (Platform.OS === 'web' && onRefresh && scrollY.current <= 0) inicioArrastre.current = e.nativeEvent.touches[0]?.pageY ?? null; }}
+          onTouchEnd={e => {
+            const inicio = inicioArrastre.current; inicioArrastre.current = null;
+            const fin = e.nativeEvent.changedTouches[0]?.pageY;
+            if (Platform.OS === 'web' && inicio !== null && fin !== undefined && fin - inicio >= 72 && !refreshing) void onRefresh?.();
+          }}
+          refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} /> : undefined} contentContainerStyle={[{ padding: 20, paddingBottom: 48, gap: 16 }, contenido]} keyboardShouldPersistTaps="handled">
+          {onRefresh && Platform.OS === 'web' && <Pressable accessibilityRole="button" disabled={refreshing} onPress={() => void onRefresh()}><T v="chico" tenue>{refreshing ? 'Actualizando…' : 'Actualizar · desliza hacia abajo'}</T></Pressable>}
           {children}
         </ScrollView>
       ) : (
@@ -42,11 +54,14 @@ export function Boton({ titulo, onPress, href, variante = 'tinta', deshabilitado
   );
 }
 
-export function Campo({ etiqueta, ayuda, ...p }: TextInputProps & { etiqueta: string; ayuda?: string }) {
+export function Campo({ etiqueta, ayuda, derecha, ...p }: TextInputProps & { etiqueta: string; ayuda?: string; derecha?: React.ReactNode }) {
   return (
     <View style={{ gap: 6 }}>
       <T v="senal" tenue>{etiqueta}</T>
-      <TextInput placeholderTextColor={C.lineaFuerte} {...p} style={[s.campo, p.style]} />
+      <View style={{ justifyContent: 'center' }}>
+        <TextInput placeholderTextColor={C.lineaFuerte} {...p} style={[s.campo, derecha ? { paddingRight: 40 } : null, p.style]} />
+        {derecha && <View style={{ position: 'absolute', right: 12 }}>{derecha}</View>}
+      </View>
       {ayuda ? <T v="chico" tenue>{ayuda}</T> : null}
     </View>
   );

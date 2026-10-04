@@ -1,63 +1,57 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { almacen } from './almacen';
 
-export interface ItemCarrito {
-  productoId: string;
-  nombre: string;
-  precioBs: number;
-  cantidad: number;
-  localId: string;
-  local: string;
-  ubicacion: string;
-  dropId?: string | null;
-}
+import { agregarItem, cambiarItem, type ItemCarrito, type TipoCarrito } from './carrito-modelo';
+export { claveItem, type ItemCarrito, type TipoCarrito } from './carrito-modelo';
 
-interface Ctx {
-  items: ItemCarrito[];
-  agregar: (i: ItemCarrito) => void;
-  cambiar: (productoId: string, cantidad: number) => void;
-  vaciar: () => void;
-  total: number;
-  porLocal: { localId: string; local: string; ubicacion: string; items: ItemCarrito[]; subtotal: number }[];
-}
-
-const Contexto = createContext<Ctx>({} as Ctx);
-const CLAVE = 'pp.carrito';
-
-/** Carrito multi-local de PaseoYa (HU-Y04): al confirmar se crea un sub-pedido por local. */
-export function ProveedorCarrito({ children }: { children: React.ReactNode }) {
+function useCarritoPersistido(tipo: TipoCarrito) {
   const [items, setItems] = useState<ItemCarrito[]>([]);
-
+  const [cargado, setCargado] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const cola = useRef(Promise.resolve());
+  const clave = 'pp.carrito.' + tipo;
   useEffect(() => {
-    void almacen.leer(CLAVE).then((v) => v && setItems(JSON.parse(v)));
-  }, []);
+    let vivo = true;
+    void almacen.leer(clave).then(v => {
+      if (!vivo) return;
+      const datos = v ? JSON.parse(v) : [];
+      if (!Array.isArray(datos)) throw new Error('Carrito no válido');
+      setItems(datos);
+      setCargado(true);
+    }).catch(() => { if (vivo) setError('No se pudo recuperar el carrito. Vuelve a abrir la app.'); });
+    return () => { vivo = false; };
+  }, [clave]);
   useEffect(() => {
-    void almacen.guardar(CLAVE, JSON.stringify(items));
-  }, [items]);
-
+    if (!cargado) return;
+    cola.current = cola.current.then(() => almacen.guardar(clave, JSON.stringify(items)))
+      .catch(() => setError('No se pudo guardar el carrito en el dispositivo.'));
+  }, [items, clave, cargado]);
   const agregar = useCallback((i: ItemCarrito) => {
-    setItems((xs) => {
-      const e = xs.find((x) => x.productoId === i.productoId && (x.dropId ?? null) === (i.dropId ?? null));
-      return e ? xs.map((x) => (x === e ? { ...x, cantidad: Math.min(20, x.cantidad + i.cantidad) } : x)) : [...xs, i];
-    });
-  }, []);
-  const cambiar = useCallback((productoId: string, cantidad: number) => {
-    setItems((xs) => (cantidad <= 0 ? xs.filter((x) => x.productoId !== productoId) : xs.map((x) => (x.productoId === productoId ? { ...x, cantidad } : x))));
-  }, []);
-  const vaciar = useCallback(() => setItems([]), []);
-
-  const valor = useMemo(() => {
+    if (!cargado) return;
+    setItems(xs => agregarItem(xs, i));
+  }, [cargado]);
+  const cambiar = useCallback((key: string, cantidad: number) => {
+    if (!cargado) return;
+    setItems(xs => cambiarItem(xs,key,cantidad));
+  }, [cargado]);
+  const vaciar = useCallback(() => { if (cargado) setItems([]); }, [cargado]);
+  return useMemo(() => {
     const grupos = new Map<string, { localId: string; local: string; ubicacion: string; items: ItemCarrito[]; subtotal: number }>();
     for (const i of items) {
-      const g = grupos.get(i.localId) ?? { localId: i.localId, local: i.local, ubicacion: i.ubicacion, items: [], subtotal: 0 };
-      g.items.push(i);
-      g.subtotal += i.precioBs * i.cantidad;
-      grupos.set(i.localId, g);
+      const g = grupos.get(i.localId) ?? { localId:i.localId,local:i.local,ubicacion:i.ubicacion,items:[],subtotal:0 };
+      g.items.push(i); g.subtotal += i.precioBs*i.cantidad; grupos.set(i.localId,g);
     }
-    return { items, agregar, cambiar, vaciar, total: items.reduce((a, i) => a + i.precioBs * i.cantidad, 0), porLocal: [...grupos.values()] };
-  }, [items, agregar, cambiar, vaciar]);
-
-  return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;
+    return { items, agregar, cambiar, vaciar, cargado, error, cantidadTotal:items.reduce((a,i) => a+i.cantidad,0), total:items.reduce((a,i) => a+i.precioBs*i.cantidad,0), porLocal:[...grupos.values()] };
+  }, [items, agregar, cambiar, vaciar, cargado, error]);
 }
-
-export const useCarrito = () => useContext(Contexto);
+const Contexto = createContext<{ comida: ReturnType<typeof useCarritoPersistido>; retail: ReturnType<typeof useCarritoPersistido> } | null>(null);
+export function ProveedorCarrito({ children }: { children: React.ReactNode }) {
+  const comida = useCarritoPersistido('comida');
+  const retail = useCarritoPersistido('retail');
+  return <Contexto.Provider value={{ comida, retail }}>{children}</Contexto.Provider>;
+}
+export function useCarrito() {
+  const valor = useContext(Contexto);
+  if (!valor) throw new Error('Falta ProveedorCarrito');
+  return valor;
+}

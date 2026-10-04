@@ -1,40 +1,27 @@
-import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Aviso, Boton, Pantalla, Segmentado, T, Vacio } from '@/components/ui';
 import { C, F } from '@/constants/theme';
 import { api } from '@/lib/api';
-import { useCarrito } from '@/lib/carrito';
+import { claveItem, useCarrito, type TipoCarrito } from '@/lib/carrito';
 import { bs, useAccion } from '@/lib/datos';
 
-/** Franjas de 30 minutos desde la próxima media hora, hora boliviana. */
-function franjas() {
-  const out: { inicio: Date; fin: Date; texto: string }[] = [];
-  const ahora = new Date();
-  const base = new Date(Math.ceil((ahora.getTime() + 20 * 60_000) / (30 * 60_000)) * 30 * 60_000);
-  for (let i = 0; i < 16; i++) {
-    const inicio = new Date(base.getTime() + i * 30 * 60_000);
-    const fin = new Date(inicio.getTime() + 30 * 60_000);
-    const h = (d: Date) => d.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/La_Paz' });
-    out.push({ inicio, fin, texto: `${h(inicio)}–${h(fin)}` });
-  }
-  return out;
-}
-
-/** HU-Y04 (carrito multi-local), HU-Y05 (franja de retiro, pago en el local), HU-Y11 (pago QR anticipado). */
 export default function Carrito() {
   const router = useRouter();
-  const { porLocal, total, cambiar, vaciar, items } = useCarrito();
-  const opciones = useMemo(franjas, []);
-  const [franja, setFranja] = useState(0);
+  const { tipo: inicial } = useLocalSearchParams<{ tipo?: string }>();
+  const carritos = useCarrito();
+  const [tipo, setTipo] = useState<TipoCarrito>(inicial === 'retail' ? 'retail' : 'comida');
+  const { porLocal, total, cambiar, vaciar, items, cargado, error } = carritos[tipo];
+  const [dia, setDia] = useState(0);
   const [pago, setPago] = useState<'en_local' | 'qr_anticipado'>('en_local');
   const a = useAccion();
 
   async function confirmar() {
-    const f = opciones[franja];
+    const fecha = new Date(Date.now() - 4 * 3600_000 + dia * 86400_000).toISOString().slice(0, 10);
     const r = await a.ejecutar(() =>
       api('/cliente/pedidos', {
-        cuerpo: { items: items.map((i) => ({ productoId: i.productoId, cantidad: i.cantidad, dropId: i.dropId ?? null })), franjaInicio: f.inicio.toISOString(), franjaFin: f.fin.toISOString(), pago },
+        cuerpo: { items: items.map((i) => ({ productoId: i.productoId, cantidad: i.cantidad, dropId: i.dropId ?? null, varianteIds: i.varianteIds ?? [] })), tipo, fechaEstimadaRetiro: tipo === 'retail' ? fecha : undefined, pago },
       }),
     );
     if (r) {
@@ -43,10 +30,12 @@ export default function Carrito() {
     }
   }
 
-  if (!items.length) return <Pantalla><Vacio texto="Tu carrito está vacío. Busca productos en PaseoYa." /></Pantalla>;
 
   return (
     <Pantalla>
+      <Segmentado opciones={[{valor: 'comida', texto: `Comida (${carritos.comida.cantidadTotal})`}, {valor: 'retail', texto: `Retail (${carritos.retail.cantidadTotal})`}]} valor={tipo} onCambio={setTipo} />
+      <Aviso texto={error} tipo="error" />
+      {!items.length && <Vacio texto={`Tu carrito de ${tipo} está vacío.`} />}
       {porLocal.map((g) => (
         <View key={g.localId} style={{ borderTopWidth: 1, borderTopColor: C.lineaFuerte, paddingTop: 12, gap: 6 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -57,11 +46,11 @@ export default function Carrito() {
             <T>{bs(g.subtotal)}</T>
           </View>
           {g.items.map((i) => (
-            <View key={i.productoId + (i.dropId ?? '')} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 }}>
-              <T style={{ flex: 1 }}>{i.nombre}{i.dropId ? ' · precio Drop' : ''}</T>
-              <Pressable onPress={() => cambiar(i.productoId, i.cantidad - 1)} hitSlop={8}><T v="subtitulo">−</T></Pressable>
+            <View key={claveItem(i)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 }}>
+              <T style={{ flex: 1 }}>{i.nombre}{i.varianteDetalle ? ` · ${i.varianteDetalle}` : ''}{i.dropId ? ' · precio Drop' : ''}</T>
+              <Pressable onPress={() => cambiar(claveItem(i), i.cantidad - 1)} hitSlop={8}><T v="subtitulo">−</T></Pressable>
               <T style={{ fontFamily: F.datoMedio, minWidth: 18, textAlign: 'center' }}>{i.cantidad}</T>
-              <Pressable onPress={() => cambiar(i.productoId, i.cantidad + 1)} hitSlop={8}><T v="subtitulo">+</T></Pressable>
+              <Pressable onPress={() => cambiar(claveItem(i), i.cantidad + 1)} hitSlop={8}><T v="subtitulo">+</T></Pressable>
             </View>
           ))}
         </View>
@@ -72,19 +61,15 @@ export default function Carrito() {
       </View>
       <T v="chico" oro>Sumas {Math.floor(total)} pts al retirar. Cada local te entrega su parte con su propio código.</T>
 
-      <T v="senal" tenue>Hora de retiro</T>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-        {opciones.map((o, i) => (
-          <Pressable key={o.texto} onPress={() => setFranja(i)} style={{ borderWidth: 1, borderColor: franja === i ? C.tinta : C.lineaFuerte, backgroundColor: franja === i ? C.tinta : 'transparent', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 2 }}>
-            <T v="chico" style={{ color: franja === i ? C.papel : C.tinta, fontVariant: ['tabular-nums'] }}>{o.texto}</T>
-          </Pressable>
-        ))}
-      </View>
+      {tipo === 'retail' ? <>
+        <T v="senal" tenue>Fecha estimada de llegada</T>
+        <Segmentado opciones={[{valor:'0',texto:'Hoy'},{valor:'1',texto:'Mañana'},{valor:'2',texto:'Pasado mañana'}]} valor={String(dia)} onCambio={v => setDia(Number(v))} />
+      </> : <T v="chico" tenue>El restaurante recibe tu pedido ahora y te avisa cuando esté listo para recoger.</T>}
       <T v="senal" tenue>Pago</T>
       <Segmentado opciones={[{ valor: 'en_local', texto: 'En el local al retirar' }, { valor: 'qr_anticipado', texto: 'QR antes de ir' }]} valor={pago} onCambio={setPago} />
       {pago === 'qr_anticipado' && <T v="chico" tenue>Solo para pedidos de un local. Después de pedir, adjuntas el comprobante del pago QR.</T>}
       <Aviso texto={a.error} tipo="error" />
-      <Boton titulo={`Confirmar pedido · ${bs(total)}`} onPress={() => void confirmar()} cargando={a.enviando} deshabilitado={pago === 'qr_anticipado' && porLocal.length > 1} />
+      <Boton titulo={`${tipo === 'comida' ? 'Realizar Pedido' : 'Confirmar Reserva / Pedido'} · ${bs(total)}`} onPress={() => void confirmar()} cargando={a.enviando} deshabilitado={!cargado || !items.length || (pago === 'qr_anticipado' && porLocal.length > 1)} />
     </Pantalla>
   );
 }

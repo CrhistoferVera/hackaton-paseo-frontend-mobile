@@ -55,7 +55,7 @@ export default function Mapa() {
 
   useEffect(() => {
     if (params.destino) void guiarA(params.destino);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [params.destino]);
 
   const promosPorLocal = useMemo(() => {

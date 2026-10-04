@@ -9,6 +9,7 @@
     "@expo-google-fonts/montserrat": "^0.4.2",
     "@expo-google-fonts/pacifico": "^0.4.1",
     "@expo/ui": "~57.0.21",
+    "@expo/vector-icons": "^15.0.2",
     "expo": "~57.0.26",
     "expo-audio": "~57.0.5",
     "expo-camera": "~57.0.6",

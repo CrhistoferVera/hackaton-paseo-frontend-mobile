@@ -57,7 +57,7 @@ function Guardia() {
       <Stack.Screen name="notificaciones" options={{ title: 'Avisos' }} />
       <Stack.Screen name="ruta" options={{ title: 'Cómo llegar' }} />
       <Stack.Screen name="eventos" options={{ title: 'Eventos' }} />
-      <Stack.Screen name="buscar" options={{ title: 'Buscar' }} />
+      <Stack.Screen name="buscar" options={{ headerShown: false, gestureEnabled: true }} />
     </Stack>
     {usuario && <JarvisEnVivo />}
     </>

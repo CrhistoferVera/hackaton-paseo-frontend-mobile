@@ -75,8 +75,60 @@ function Guardia() {
           ),
         }}
       />
-      <Stack.Screen name="pedidos" options={{ title: 'Mis pedidos' }} />
-      <Stack.Screen name="pedido/[id]" options={{ title: 'Pedido' }} />
+      <Stack.Screen
+        name="pedidos"
+        options={{
+          title: 'Mis pedidos',
+          headerBackVisible: false,
+          gestureEnabled: true,
+          headerLeft: () => (
+            <Pressable
+              onPress={() => router.back()}
+              hitSlop={10}
+              style={({ pressed }) => [
+                {
+                  width: 48,
+                  height: 48,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                },
+                pressed && { opacity: 0.6 },
+              ]}
+              accessibilityLabel="Volver"
+              accessibilityRole="button"
+            >
+              <Ionicons name="arrow-back" size={24} color={C.tinta} />
+            </Pressable>
+          ),
+        }}
+      />
+      <Stack.Screen
+        name="pedido/[id]"
+        options={{
+          title: 'Pedido',
+          headerBackVisible: false,
+          gestureEnabled: true,
+          headerLeft: () => (
+            <Pressable
+              onPress={() => router.back()}
+              hitSlop={10}
+              style={({ pressed }) => [
+                {
+                  width: 48,
+                  height: 48,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                },
+                pressed && { opacity: 0.6 },
+              ]}
+              accessibilityLabel="Volver"
+              accessibilityRole="button"
+            >
+              <Ionicons name="arrow-back" size={24} color={C.tinta} />
+            </Pressable>
+          ),
+        }}
+      />
       <Stack.Screen name="favoritos" options={{ title: 'Favoritos' }} />
       <Stack.Screen name="jarvis" options={{ title: 'Jarvis' }} />
       <Stack.Screen name="factura" options={{ title: 'Escanear factura' }} />

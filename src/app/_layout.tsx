@@ -10,6 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { JarvisEnVivo } from '@/components/jarvis-en-vivo';
+import { BotonJarvisFlotante } from '@/components/boton-jarvis-flotante';
 import { C } from '@/constants/theme';
 import { ProveedorCarrito } from '@/lib/carrito';
 import { ProveedorSesion, useSesion } from '@/lib/sesion';
@@ -60,6 +61,7 @@ function Guardia() {
       <Stack.Screen name="buscar" options={{ headerShown: false, gestureEnabled: true }} />
     </Stack>
     {usuario && <JarvisEnVivo />}
+    {usuario && <BotonJarvisFlotante />}
     </>
   );
 }

@@ -9,6 +9,8 @@ import { Stack } from 'expo-router/stack';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable } from 'react-native';
 import { JarvisEnVivo } from '@/components/jarvis-en-vivo';
 import { BotonJarvisFlotante } from '@/components/boton-jarvis-flotante';
 import { C } from '@/constants/theme';
@@ -46,7 +48,33 @@ function Guardia() {
       <Stack.Screen name="misiones" options={{ title: 'Misiones' }} />
       <Stack.Screen name="cupon/[id]" options={{ title: 'Cupón' }} />
       <Stack.Screen name="producto/[id]" options={{ headerShown: false, gestureEnabled: true }} />
-      <Stack.Screen name="carrito" options={{ title: 'Tu carrito' }} />
+      <Stack.Screen
+        name="carrito"
+        options={{
+          title: 'Mi carrito',
+          headerBackVisible: false,
+          gestureEnabled: true,
+          headerLeft: () => (
+            <Pressable
+              onPress={() => router.back()}
+              hitSlop={10}
+              style={({ pressed }) => [
+                {
+                  width: 48,
+                  height: 48,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                },
+                pressed && { opacity: 0.6 },
+              ]}
+              accessibilityLabel="Volver"
+              accessibilityRole="button"
+            >
+              <Ionicons name="arrow-back" size={24} color={C.tinta} />
+            </Pressable>
+          ),
+        }}
+      />
       <Stack.Screen name="pedidos" options={{ title: 'Mis pedidos' }} />
       <Stack.Screen name="pedido/[id]" options={{ title: 'Pedido' }} />
       <Stack.Screen name="favoritos" options={{ title: 'Favoritos' }} />

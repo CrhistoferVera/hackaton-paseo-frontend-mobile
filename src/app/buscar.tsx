@@ -37,6 +37,7 @@ export default function Buscar() {
   const { datos: productosLocal } = useDatos<any[]>(local ? `/paseoya/productos?local=${local}` : null);
   const carritos = useCarrito();
   const { items } = carritos[cartTipo];
+  const totalCantidad = carritos.comida.cantidadTotal + carritos.retail.cantidadTotal;
 
   const [q, setQ] = useState('');
   const [resultados, setResultados] = useState<any[] | null>(null);
@@ -169,16 +170,16 @@ export default function Buscar() {
 
         {/* Botón de Carrito */}
         <Pressable
-          onPress={() => router.push(`/carrito?tipo=${cartTipo}`)}
+          onPress={() => router.push(`/carrito?section=${section}&tipo=${cartTipo}`)}
           hitSlop={10}
           style={({ pressed }) => [styles.cartButton, pressed && { opacity: 0.6 }]}
-          accessibilityLabel={`Carrito, ${items.length} productos`}
+          accessibilityLabel={`Carrito, ${totalCantidad} productos`}
           accessibilityRole="button"
         >
           <Ionicons name="cart-outline" size={24} color={C.tinta} />
-          {items.length > 0 && (
+          {totalCantidad > 0 && (
             <View style={styles.cartBadge}>
-              <T style={styles.cartBadgeText}>{items.length > 99 ? '99+' : items.length}</T>
+              <T style={styles.cartBadgeText}>{totalCantidad > 99 ? '99+' : totalCantidad}</T>
             </View>
           )}
         </Pressable>

@@ -6,10 +6,14 @@ export interface Business {
   nombre: string;
   descripcion: string;
   imagen: string | null;
+  fotos: string[];
   piso: string | null;
+  sector?: string | null;
   tipo: 'food' | 'shop';
   activo: boolean;
   numeroLocal?: string | null;
+  horarioApertura?: string | null;
+  horarioCierre?: string | null;
 }
 
 export interface Promotion {
@@ -41,17 +45,25 @@ export function mapBusinessRow(row: any): Business {
     }
   }
 
-  const rawImagen = row.foto_url || row.imagen_url || row.banner_url || (Array.isArray(row.fotos) && row.fotos.length > 0 ? row.fotos[0] : null);
+  const rawFotos: string[] = Array.isArray(row.fotos) && row.fotos.length > 0
+    ? row.fotos
+    : (row.foto_url ? [row.foto_url] : []);
+  const mappedFotos = rawFotos.map((f: string) => urlArchivo(f)!).filter(Boolean);
+  const rawImagen = row.foto_url || row.imagen_url || row.banner_url || (rawFotos.length > 0 ? rawFotos[0] : null);
 
   return {
     id: String(row.id),
     nombre: row.nombre ?? '',
     descripcion: row.descripcion ?? '',
     imagen: urlArchivo(rawImagen),
+    fotos: mappedFotos,
     piso: pisoFormateado,
+    sector: row.sector ?? null,
     tipo: row.ambito === 'tiendas' || row.tipo === 'shop' || row.tipo === 'retail' ? 'shop' : 'food',
     activo: Boolean(row.activo ?? true),
     numeroLocal: row.numero_local ?? null,
+    horarioApertura: row.horario_apertura ?? null,
+    horarioCierre: row.horario_cierre ?? null,
   };
 }
 

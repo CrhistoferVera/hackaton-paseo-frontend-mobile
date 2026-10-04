@@ -254,7 +254,7 @@ function BusinessCard({ b, section }: { b: Business; section: 'food' | 'shop' })
   return (
     <Pressable
       onPress={() => {
-        router.push(`/buscar?section=${section}&local=${b.id}`);
+        router.push(`/tienda/${b.id}?section=${section}` as any);
       }}
       style={({ pressed }) => [styles.businessCard, pressed && { transform: [{ scale: 0.985 }] }]}
     >

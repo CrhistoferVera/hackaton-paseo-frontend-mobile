@@ -12,12 +12,12 @@ export function T({ v = 'texto', style, oro, tenue, oscuro, ...p }: TextProps & 
   return <Text {...p} style={[s[v], { color }, style]} />;
 }
 
-export function Pantalla({ children, oscuro, desplazable = true, contenido, onRefresh, refreshing = false }: { children: React.ReactNode; oscuro?: boolean; desplazable?: boolean; contenido?: ViewStyle; onRefresh?: () => void | Promise<void>; refreshing?: boolean }) {
+export function Pantalla({ children, oscuro, desplazable = true, contenido, onRefresh, refreshing = false, edges = ['top'] }: { children: React.ReactNode; oscuro?: boolean; desplazable?: boolean; contenido?: ViewStyle; onRefresh?: () => void | Promise<void>; refreshing?: boolean; edges?: readonly ('top' | 'right' | 'bottom' | 'left')[] }) {
   const inicioArrastre = useRef<number | null>(null);
   const scrollY = useRef(0);
   const fondo = { backgroundColor: oscuro ? C.sala : C.papel, flex: 1 };
   return (
-    <SafeAreaView style={fondo} edges={['top']}>
+    <SafeAreaView style={fondo} edges={edges}>
       {desplazable ? (
         <ScrollView
           onScroll={e => { scrollY.current = e.nativeEvent.contentOffset.y; }} scrollEventThrottle={16}

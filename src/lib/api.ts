@@ -35,8 +35,9 @@ export async function api<T = any>(ruta: string, op: Opciones = {}): Promise<T> 
       headers,
       body: (op.formulario as any) ?? (op.cuerpo !== undefined ? JSON.stringify(op.cuerpo) : undefined),
     });
-  } catch {
-    throw new ErrorApi(0, 'Sin conexión con Paseo Points. Revisa tu internet.');
+  } catch (err: any) {
+    const detalle = err?.message ? ` (${err.message})` : '';
+    throw new ErrorApi(0, `Sin conexión con Paseo Points. Revisa tu internet.${detalle}`);
   }
   const texto = await r.text();
   let datos: any = texto;

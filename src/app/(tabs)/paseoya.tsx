@@ -1,109 +1,149 @@
-import { Image } from 'expo-image';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, View } from 'react-native';
-import { Boton, Campo, Fila, IrA, Pantalla, Seccion, Segmentado, T, Vacio } from '@/components/ui';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import { Platform, Pressable, View } from 'react-native';
+import { IrA, Pantalla, T } from '@/components/ui';
 import { C } from '@/constants/theme';
-import { api, urlArchivo } from '@/lib/api';
-import { useCarrito } from '@/lib/carrito';
-import { bs, useDatos } from '@/lib/datos';
 
-/** HU-Y01 (categorías), HU-Y02 (buscador global), destacados, carrito y pedidos. */
 export default function PaseoYa() {
   const router = useRouter();
-  const { local } = useLocalSearchParams<{ local?: string }>();
-  const { datos: productosLocal } = useDatos<any[]>(local ? `/paseoya/productos?local=${local}` : null);
-  const carritos = useCarrito();
-  const [ambito, setAmbito] = useState<'comida' | 'tiendas'>('comida');
-  const tipo = ambito === 'comida' ? 'comida' : 'retail';
-  const { items, total } = carritos[tipo];
-  const [categoria, setCategoria] = useState<any | null>(null);
-  const [q, setQ] = useState('');
-  const [resultados, setResultados] = useState<any[] | null>(null);
-  const [orden, setOrden] = useState<'precio' | 'nombre'>('precio');
-  const { datos: cats } = useDatos<any[]>(`/paseoya/categorias${ambito ? `?ambito=${ambito}` : ''}`);
-  const { datos: destacados } = useDatos<any[]>('/paseoya/destacados');
-  const { datos: productos } = useDatos<any[]>(categoria ? `/paseoya/productos?categoria=${categoria.id}` : null);
-  const { datos: drops } = useDatos<any[]>('/cliente/drops');
-
-  async function buscar(o = orden) {
-    if (q.trim().length < 2) return setResultados(null);
-    setResultados(await api(`/paseoya/buscar?q=${encodeURIComponent(q)}&orden=${o}`).catch(() => []));
-  }
-
-  const dropsDelAmbito = drops?.filter(d => d.ambito === ambito) ?? [];
-  const lista = (resultados ?? (categoria ? productos : local ? productosLocal : null))?.filter(p => p.ambito === ambito);
 
   return (
-    <Pantalla>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <T v="titulo">PaseoYa</T>
-        <IrA href="/pedidos"><T v="senal" tenue>Mis pedidos</T></IrA>
+    <Pantalla contenido={{ flexGrow: 1 }}>
+      {/* Zona Superior: Botón Mis Pedidos */}
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 8, zIndex: 10 }}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Ir a mis pedidos"
+          onPress={() => {
+            if (Platform.OS !== 'web') void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push('/pedidos');
+          }}
+          style={({ pressed }) => [
+            {
+              backgroundColor: C.tinta,
+              borderRadius: 99,
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              minHeight: 48,
+              minWidth: 48,
+              justifyContent: 'center',
+              shadowColor: C.tinta,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              elevation: 2,
+            },
+            pressed && { transform: [{ scale: 0.96 }], opacity: 0.9 }
+          ]}
+        >
+          <T style={{ fontSize: 16, lineHeight: 20 }}></T>
+          <T v="senal" style={{ color: C.papel }}>Mis pedidos</T>
+        </Pressable>
       </View>
-      <T tenue v="chico">Pide en los locales del Paseo y retira en persona. Sumas puntos al retirar.</T>
-      <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-end' }}>
-        <View style={{ flex: 1 }}>
-          <Campo etiqueta="Buscar en todos los locales" value={q} onChangeText={setQ} onSubmitEditing={() => void buscar()} returnKeyType="search" placeholder="audífonos bluetooth" />
+
+      {/* Zona Central: Título, Subtítulo y Tarjetas centrado verticalmente */}
+      <View style={{ flex: 1, justifyContent: 'center', paddingBottom: 24, zIndex: 1 }}>
+        <T
+          adjustsFontSizeToFit
+          numberOfLines={2}
+          style={{
+            fontFamily: 'Pacifico_400Regular',
+            fontSize: 40,
+            lineHeight: 56, // 1.4x fontSize para evitar recortes
+            color: C.tinta,
+            marginBottom: 4,
+            paddingVertical: 8, // extra padding vertical
+            includeFontPadding: true, // fix para Android
+            overflow: 'visible'
+          }}
+        >
+          ¡Bienvenido a PaseoYa!
+        </T>
+        <T style={{ fontFamily: 'Inter_400Regular', fontSize: 16, color: C.grafito, marginBottom: 32 }}>
+          ¿Qué estás buscando?
+        </T>
+
+        <View style={{ flexDirection: 'column', gap: 40 }}>
+          <Pressable
+            onPress={() => {
+              if (Platform.OS !== 'web') void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/buscar?section=food');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Ir a PaseoFood, comida y bebidas"
+            style={({ pressed }) => [
+              {
+                backgroundColor: C.veladura,
+                borderRadius: 24,
+                padding: 24,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                minHeight: 140,
+                shadowColor: C.tinta,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.05,
+                shadowRadius: 12,
+                elevation: 2,
+                overflow: 'visible'
+              },
+              pressed && { transform: [{ scale: 0.97 }] }
+            ]}
+          >
+            <View style={{ width: '55%', zIndex: 2 }}>
+              <T style={{ fontFamily: 'Montserrat_700Bold', fontSize: 22, color: C.tinta, marginBottom: 4 }}>PaseoFood</T>
+              <T style={{ fontFamily: 'Inter_400Regular', fontSize: 14, color: C.grafito }}>Comida, postres y bebidas</T>
+            </View>
+            <View style={{ position: 'absolute', right: 0, top: -20, width: '45%', height: 160, justifyContent: 'center', alignItems: 'center', zIndex: 1, transform: [{ rotate: '-4deg' }] }}>
+              {/* TODO: Reemplazar este placeholder por un PNG de comida con transparencia real y fondo limpio */}
+              <View style={{ width: 130, height: 130, backgroundColor: '#FADDA8', borderRadius: 65, justifyContent: 'center', alignItems: 'center', shadowColor: C.tinta, shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }}>
+                <T v="titulo" style={{ fontSize: 60, lineHeight: 70 }}>🍔</T>
+              </View>
+            </View>
+          </Pressable>
+
+          <Pressable
+            onPress={() => {
+              if (Platform.OS !== 'web') void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/buscar?section=shop');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Ir a PaseoShop, tecnología, moda y más"
+            style={({ pressed }) => [
+              {
+                backgroundColor: C.veladura,
+                borderRadius: 24,
+                padding: 24,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                minHeight: 140,
+                shadowColor: C.tinta,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.05,
+                shadowRadius: 12,
+                elevation: 2,
+                overflow: 'visible'
+              },
+              pressed && { transform: [{ scale: 0.97 }] }
+            ]}
+          >
+            <View style={{ width: '55%', zIndex: 2 }}>
+              <T style={{ fontFamily: 'Montserrat_700Bold', fontSize: 22, color: C.tinta, marginBottom: 4 }}>PaseoShop</T>
+              <T style={{ fontFamily: 'Inter_400Regular', fontSize: 14, color: C.grafito }}>Tecnología, moda y más</T>
+            </View>
+            <View style={{ position: 'absolute', right: 0, top: -20, width: '45%', height: 160, justifyContent: 'center', alignItems: 'center', zIndex: 1, transform: [{ rotate: '4deg' }] }}>
+              {/* TODO: Reemplazar este placeholder por un PNG de compras/bolsa con transparencia real y fondo limpio */}
+              <View style={{ width: 130, height: 130, backgroundColor: '#D8E2DC', borderRadius: 65, justifyContent: 'center', alignItems: 'center', shadowColor: C.tinta, shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }}>
+                <T v="titulo" style={{ fontSize: 60, lineHeight: 70 }}>🛍️</T>
+              </View>
+            </View>
+          </Pressable>
         </View>
-        <Boton titulo="Buscar" onPress={() => void buscar()} />
       </View>
-
-      {!!dropsDelAmbito.length && (
-        <Seccion titulo="Precios desbloqueados por Drop">
-          {dropsDelAmbito.map((d) => (
-            <Fila key={d.drop_id} titulo={d.producto} detalle={`${d.local} · normal ${bs(d.precio_bs)}`} valor={bs(d.precio_especial)} valorOro href={`/producto/${d.producto_id}?drop=${d.drop_id}`} />
-          ))}
-        </Seccion>
-      )}
-
-      <Segmentado opciones={[{valor:'comida',texto:'Comida'},{valor:'tiendas',texto:'Retail'}]} valor={ambito} onCambio={a => { setAmbito(a); setCategoria(null); }} />
-      {resultados ? (
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <T v="senal" tenue>{lista?.length ?? 0} resultados</T>
-          <Segmentado opciones={[{ valor: 'precio', texto: 'Precio' }, { valor: 'nombre', texto: 'Nombre' }]} valor={orden} onCambio={(o) => { setOrden(o); void buscar(o); }} />
-        </View>
-      ) : (
-        <>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-            {cats?.filter(c => c.ambito === ambito).map((c) => (
-              <Pressable key={c.id} onPress={() => setCategoria(categoria?.id === c.id ? null : c)} style={{ borderWidth: 1, borderColor: categoria?.id === c.id ? C.tinta : C.lineaFuerte, backgroundColor: categoria?.id === c.id ? C.tinta : 'transparent', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 2 }}>
-                <T v="chico" style={{ color: categoria?.id === c.id ? C.papel : C.tinta }}>{c.nombre} · {c.productos}</T>
-              </Pressable>
-            ))}
-          </View>
-        </>
-      )}
-
-      {local && !resultados && !categoria && (
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <T v="senal" oro>{productosLocal?.[0]?.local ?? 'Productos del local'}</T>
-          <Pressable onPress={() => router.setParams({ local: undefined })} hitSlop={8}><T v="senal" tenue>Ver todo</T></Pressable>
-        </View>
-      )}
-      {lista ? (
-        lista.length ? lista.map((p) => <ProductoFila key={p.id} p={p} />) : <Vacio texto={resultados ? `No encontramos «${q}». Registramos tu búsqueda para que el Paseo sepa que hace falta.` : 'Sin productos en esta categoría.'} />
-      ) : (
-        <Seccion titulo="Destacados">
-          {destacados?.filter(p => p.ambito === ambito).map((p) => <ProductoFila key={p.id} p={p} />)}
-        </Seccion>
-      )}
-
-      {items.length > 0 && (
-        <Boton titulo={`Ver carrito de ${tipo} · ${bs(total)}`} variante="oro" onPress={() => router.push(`/carrito?tipo=${tipo}`)} />
-      )}
     </Pantalla>
-  );
-}
-
-function ProductoFila({ p }: { p: any }) {
-  return (
-    <IrA href={`/producto/${p.id}`} estilo={{ flexDirection: 'row', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.linea, alignItems: 'center' }}>
-        {p.foto_url ? <Image source={{ uri: urlArchivo(p.foto_url)! }} style={{ width: 52, height: 52 }} /> : <View style={{ width: 52, height: 52, backgroundColor: C.veladura }} />}
-        <View style={{ flex: 1 }}>
-          <T style={{ fontFamily: 'Inter_500Medium' }}>{p.nombre}</T>
-          <T v="chico" tenue>{p.local} · {p.piso} · Local {p.numero_local}{p.stock <= 3 ? ` · quedan ${p.stock}` : ''}</T>
-        </View>
-        <T v="subtitulo">{bs(p.precio_bs)}</T>
-    </IrA>
   );
 }

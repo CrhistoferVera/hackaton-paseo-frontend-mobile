@@ -2,6 +2,7 @@ import { BodoniModa_400Regular_Italic, BodoniModa_500Medium } from '@expo-google
 import { IBMPlexMono_400Regular, IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import { Montserrat_600SemiBold, Montserrat_700Bold } from '@expo-google-fonts/montserrat';
+import { Pacifico_400Regular } from '@expo-google-fonts/pacifico';
 import { useFonts } from 'expo-font';
 import { useRouter, useSegments } from 'expo-router';
 import { Stack } from 'expo-router/stack';
@@ -56,6 +57,7 @@ function Guardia() {
       <Stack.Screen name="notificaciones" options={{ title: 'Avisos' }} />
       <Stack.Screen name="ruta" options={{ title: 'Cómo llegar' }} />
       <Stack.Screen name="eventos" options={{ title: 'Eventos' }} />
+      <Stack.Screen name="buscar" options={{ title: 'Buscar' }} />
     </Stack>
     {usuario && <JarvisEnVivo />}
     </>
@@ -73,6 +75,7 @@ export default function RootLayout() {
     Inter_600SemiBold,
     IBMPlexMono_400Regular,
     IBMPlexMono_500Medium,
+    Pacifico_400Regular,
   });
   if (!cargadas) return null;
   return (

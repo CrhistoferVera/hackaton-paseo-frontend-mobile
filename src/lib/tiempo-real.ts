@@ -16,7 +16,7 @@ function conectar(): Promise<Socket | null> {
     if (socket && tokenSocket === token) return socket;
     socket?.disconnect();
     tokenSocket = token;
-    socket = io(API_URL, { auth: { token }, transports: ['websocket'], reconnectionDelay: 1500 });
+    socket = io(API_URL, { auth: { token }, transports: ['websocket', 'polling'], reconnectionDelay: 1500 });
     return socket;
   })().finally(() => {
     pendiente = null;
@@ -33,25 +33,45 @@ export function desconectarTiempoReal() {
 /** Saldo, cupones y pedidos se actualizan sin recargar (HU-C04, HU-Y06). */
 export function useTiempoReal(eventos: Record<string, (d: any) => void>) {
   const ref = useRef(eventos);
-  useEffect(() => {
-    ref.current = eventos;
-  });
+  ref.current = eventos;
+
   useEffect(() => {
     let s: Socket | null = null;
     const manejadores: [string, (d: any) => void][] = [];
     let cancelado = false;
-    void conectar().then((x) => {
-      if (!x || cancelado) return;
-      s = x;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    function registrar(sock: Socket) {
+      if (cancelado) return;
+      s = sock;
       for (const n of Object.keys(ref.current)) {
         const fn = (d: any) => ref.current[n]?.(d);
-        x.on(n, fn);
+        sock.on(n, fn);
         manejadores.push([n, fn]);
       }
+      if (sock.connected && ref.current.connect) {
+        try {
+          ref.current.connect(null);
+        } catch {}
+      }
+    }
+
+    void conectar().then((x) => {
+      if (cancelado) return;
+      if (x) {
+        registrar(x);
+      } else {
+        timer = setTimeout(() => {
+          if (!cancelado) void conectar().then((reintento) => reintento && registrar(reintento));
+        }, 600);
+      }
     });
+
     return () => {
       cancelado = true;
+      if (timer) clearTimeout(timer);
       manejadores.forEach(([n, fn]) => s?.off(n, fn));
     };
   }, []);
 }
+

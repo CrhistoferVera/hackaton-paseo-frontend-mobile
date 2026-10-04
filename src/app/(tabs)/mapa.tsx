@@ -9,9 +9,7 @@ import { api } from '@/lib/api';
 import { bs, hora, ubicacion, useDatos } from '@/lib/datos';
 import { mostrarRuta, type RutaJarvis } from '@/lib/jarvis';
 
-type Piso = 'N1' | 'N2' | 'T';
-const PISOS: { valor: Piso; texto: string }[] = [{ valor: 'N1', texto: 'Nivel 1' }, { valor: 'N2', texto: 'Nivel 2' }, { valor: 'T', texto: 'Terrazas' }];
-const NOMBRE_PISO: Record<string, string> = { N1: 'Nivel 1', N2: 'Nivel 2', T: 'Terrazas' };
+type Piso = string;
 
 type Seleccion = { tipo: 'local'; l: any } | { tipo: 'servicio'; s: any } | null;
 
@@ -28,7 +26,15 @@ export default function Mapa() {
   const { datos: posicion, recargar: recargarPosicion } = useDatos<any>('/cliente/posicion');
   const { datos: ofertas } = useDatos<any[]>('/cliente/ofertas');
   const misOfertas = useMemo(() => new Map<string, number>((ofertas ?? []).filter((o) => o.estado === 'activa' && !o.paso).map((o) => [o.local_id, Number(o.multiplicador)])), [ofertas]);
-  const [piso, setPiso] = useState<Piso>('N1');
+  const [pisoElegido, setPiso] = useState<Piso>('');
+  const niveles = new Map<string, string>();
+  for (const p of plano?.pisos ?? []) niveles.set(p.id, p.nombre);
+  for (const p of [...(plano?.locales ?? []), ...(plano?.zonas ?? [])]) {
+    if (p.piso && !niveles.has(p.piso)) niveles.set(p.piso, p.piso === 'T' ? 'Planta baja' : p.piso.replace(/^N/, 'Nivel '));
+  }
+  const PISOS = [...niveles].sort(([a], [b]) => a === b ? 0 : a === 'T' ? -1 : b === 'T' ? 1 : a.localeCompare(b, 'es', { numeric: true })).map(([valor, texto]) => ({ valor, texto }));
+  const NOMBRE_PISO = Object.fromEntries(niveles);
+  const piso = niveles.has(pisoElegido) ? pisoElegido : niveles.has(posicion?.nodo?.piso) ? posicion.nodo.piso : PISOS[0]?.valor ?? '';
   const [sel, setSel] = useState<Seleccion>(null);
   const [q, setQ] = useState('');
   const [res, setRes] = useState<{ locales: any[]; productos: any[] } | null>(null);
@@ -47,11 +53,6 @@ export default function Mapa() {
   );
 
   const aqui = posicion?.nodo ? { x: Number(posicion.nodo.x), y: Number(posicion.nodo.y), piso: posicion.nodo.piso } : null;
-  useEffect(() => {
-    if (aqui && !sel && !ruta) setPiso(aqui.piso as Piso);
-    // Solo al conocer la posición
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [posicion?.nodo?.id]);
 
   useEffect(() => {
     if (params.destino) void guiarA(params.destino);
